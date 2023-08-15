@@ -141,7 +141,7 @@
        5. [12.4.5. Packet racing on flow destroy](#1245-packet-racing-on-flow-destroy)
     5. [12.5. Bulk sync](#125-bulk-sync)
        1. [12.5.1. Perfect sync](#1251-perfect-sync)
-       2. [12.5.2. Range sync](#1252-range-sync)
+       2. [12.5.2. Range sync (ENI-level only)](#1252-range-sync-eni-level-only)
           1. [12.5.2.1. Init phase](#12521-init-phase)
           2. [12.5.2.2. Flow tracking in steady state](#12522-flow-tracking-in-steady-state)
           3. [12.5.2.3. Tracking phase](#12523-tracking-phase)
@@ -1785,7 +1785,7 @@ The algorithm is straight-forward and already used in current DASH design. In sh
 
 More details can be found here: <https://github.com/sonic-net/DASH/blob/fa6df8ea0898ad71f5d62ce97f68ac0964b0288d/documentation/high-avail/high-availability-and-scale.md#flow-replication-using-perfect-sync>.
 
-#### 12.5.2. Range sync
+#### 12.5.2. Range sync (ENI-level only)
 
 However, perfect sync can be slow, as it needs to enumerate, serialize, and send all existing flows across to the other side. This is not ideal for handling short-time outages, such as the ones caused by link flap. Hence, we are also proposing a new way to do flow sync as well here. This new sync approach can be opt-in, as perfect sync is a sub case of it.
 

@@ -15,6 +15,10 @@ struct encap_data_t {
     bit<24> service_tunnel_key;
     IPv4Address original_overlay_sip;
     IPv4Address original_overlay_dip;
+    IPv6Address st_dst;
+    IPv6Address st_dst_mask;
+    IPv6Address st_src;
+    IPv6Address st_src_mask;
 }
 
 enum bit<16> dash_direction_t {
@@ -38,9 +42,22 @@ struct eni_data_t {
     IPv4Address pl_underlay_sip;
 }
 
+enum bit<16> dash_routing_type_t {
+    DIRECT = 0,
+    VNET = 1,
+    VNET_DIRECT = 2,
+    VNET_ENCAP = 3,
+    SERVICETUNNEL = 4,
+    PRIVATELINK = 5,
+    PRIVATELINKNSG = 6,
+    PRIVATELINKMAP = 7,
+    PRIVATELINKNAT = 8
+}
+
 struct metadata_t {
     bool dropped;
     dash_direction_t direction;
+    dash_routing_type_t routing_type;
     encap_data_t encap_data;
     EthernetAddress eni_addr;
     bit<16> vnet_id;

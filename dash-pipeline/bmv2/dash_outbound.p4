@@ -7,19 +7,6 @@
 #include "dash_service_tunnel.p4"
 
 
-typedef bit<8> MatchStage;
-#define MATCH_END           0
-#define MATCH_START         1
-#define MATCH_ROUTING0      1
-#define MATCH_ROUTING1      2
-#define MATCH_IPMAPPING0    3
-#define MATCH_IPMAPPING1    4
-#define MATCH_TCPPORTMAPPING   5
-#define MATCH_UDPPORTMAPPING   6
-
-typedef bit<16> Nexthop;
-typedef bit<32> Oid;
-
 control outbound(inout headers_t hdr,
                  inout metadata_t meta)
 {
@@ -67,43 +54,61 @@ control outbound(inout headers_t hdr,
     action do_6to4() {
     }
 
-    action do_nat() {
+    action do_nat(IPv4ORv6Address nat_sip,
+                  IPv4ORv6Address nat_dip,
+                  bit<1> ip_is_v6;
+                  bit<16> nat_sport,
+                  bit<16> nat_dport,
+                  bit<16> nat_sport_base,
+                  bit<16> nat_dport_base,
+                  ) {
+        // FIXME: handle udp ...
+        hdr.tcp.src_port = nat_sport + (hdr.tcp.src_port - nat_sport_base);
+        hdr.tcp.dst_port = nat_dport + (hdr.tcp.dst_port - nat_dport_base);
+        // FIXME: IPv6 ....
+        hdr.ipv4.src_addr = (bit<32>)nat_sip;
+        hdr.ipv4.dst_addr = (bit<32>)nat_dip;
     }
 
-    action outbound_metadata_publish(MatchStage next_stage,
+    action outbound_metadata_publish(MatchStage_t next_stage,
                                      bit<16> routing_type,
-                                     Nexthop nexthop,
-                                     Oid mapping_oid,
-                                     Oid pipeline_oid,
-                                     Oid tcpportmap_oid,
-                                     Oid udpportmap_oid,
-                                     bit<16> src_port,
-                                     bit<16> dst_port,
-                                     IPv4Address     overlay_sip,
-                                     IPv4Address     overlay_dip,
+                                     Nexthop_t nexthop,
+                                     Oid_t pipeline_oid,
+                                     Oid_t mapping_oid,
+                                     Oid_t tcpportmap_oid,
+                                     Oid_t udpportmap_oid,
+                                     bit<1> lkp_addr_is_v6,
+                                     IPv4ORv6Address lkp_addr,
+                                     bit<16> nat_src_port,
+                                     bit<16> nat_dst_port,
+                                     bit<1> is_overlay_ip_v6,
+                                     IPv4ORv6Address overlay_sip,
+                                     IPv4ORv6Address overlay_dip,
                                      EthernetAddress overlay_smac,
                                      EthernetAddress overlay_dmac,
                                      dash_encapsulation_t encap_type,
-                                     bit<24> vni,
+                                     bit<24> encap_vni,
                                      IPv4Address     underlay_sip,
                                      IPv4Address     underlay_dip,
                                      EthernetAddress underlay_smac,
                                      EthernetAddress underlay_dmac
                                     ) {
         meta.transit_to = next_stage;
-        if (next_stage == MATCH_END) {
-            meta.routing_type = routing_type;
-        }
-        meta.nexthop = nexthop;
+        meta.routing_type = meta.routing_type | routing_type;
+        meta.nexthop = nexthop != 0 ? nexthop : meta.nexthop;
 
-        meta.mapping_oid = mapping_oid != 0 ? mapping_oid : meta.mapping_oid;
         meta.pipeline_oid = pipeline_oid != 0 ? pipeline_oid : meta.pipeline_oid;
+        meta.mapping_oid = mapping_oid != 0 ? mapping_oid : meta.mapping_oid;
         meta.tcpportmap_oid = tcpportmap_oid != 0 ? tcpportmap_oid : meta.tcpportmap_oid;
         meta.udpportmap_oid = udpportmap_oid != 0 ? udpportmap_oid : meta.udpportmap_oid;
 
-        meta.src_port = src_port != 0 ? src_port : meta.src_port;
-        meta.dst_port = dst_port != 0 ? dst_port : meta.dst_port;
+        meta.lkp_addr = lkp_addr != 0 ? lkp_addr : meta.lkp_addr;
+        meta.lkp_addr_is_v6 = lkp_addr_is_v6 != 0 ? lkp_addr_is_v6 : meta.lkp_addr_is_v6;
 
+        meta.encap_data.nat_src_port = nat_src_port != 0 ? nat_src_port : meta.encap_data.nat_src_port;
+        meta.encap_data.nat_dst_port = nat_dst_port != 0 ? nat_dst_port : meta.encap_data.nat_dst_port;
+
+        meta.encap_data.is_overlay_ip_v6 = is_overlay_ip_v6 != 0 ? is_overlay_ip_v6 : meta.encap_data.is_overlay_ip_v6;
         meta.encap_data.overlay_sip = overlay_sip != 0 ? overlay_sip : meta.encap_data.overlay_sip;
         meta.encap_data.overlay_dip = overlay_dip != 0 ? overlay_dip : meta.encap_data.overlay_dip;
         meta.encap_data.overlay_smac = overlay_smac != 0 ? overlay_smac : meta.encap_data.overlay_smac;
@@ -121,7 +126,7 @@ control outbound(inout headers_t hdr,
     @name("outbound_routing|dash_outbound_routing0")
     table routing0 {
         key = {
-            meta.oid : exact @name("meta.oid:oid");
+            meta.pipeline_oid : exact @name("meta.pipeline_oid:pipeline_oid");
             meta.lkp_addr_is_v6 : exact @name("meta.lkp_addr_is_v6:lkp_addr_is_v6");
             meta.lkp_addr : lpm @name("meta.lkp_addr:lkp_addr");
         }
@@ -136,7 +141,7 @@ control outbound(inout headers_t hdr,
     @name("outbound_routing|dash_outbound_routing1")
     table routing1 {
         key = {
-            meta.oid : exact @name("meta.oid:oid");
+            meta.pipeline_oid : exact @name("meta.pipeline_oid:pipeline_oid");
             meta.lkp_addr_is_v6 : exact @name("meta.lkp_addr_is_v6:lkp_addr_is_v6");
             meta.lkp_addr : lpm @name("meta.lkp_addr:lkp_addr");
         }
@@ -182,8 +187,8 @@ control outbound(inout headers_t hdr,
     table tcpportmapping {
         key = {
             meta.tcpportmap_oid : exact @name("meta.tcpportmap_oid:tcpportmap_oid");
-            meta.tcp_src_port : range @name("meta.tcp_src_port:tcp_src_port");
-            meta.tcp_dst_port : range @name("meta.tcp_dst_port:tcp_dst_port");
+            meta.src_l4_port : range @name("meta.src_l4_port:src_l4_port");
+            meta.dst_l4_port : range @name("meta.dst_l4_port:dst_l4_port");
         }
 
         actions = {
@@ -197,8 +202,8 @@ control outbound(inout headers_t hdr,
     table udpportmapping {
         key = {
             meta.udpportmap_oid : exact @name("meta.udpportmap_oid:udpportmap_oid");
-            meta.udp_src_port : range @name("meta.udp_src_port:udp_src_port");
-            meta.udp_dst_port : range @name("meta.udp_dst_port:udp_dst_port");
+            meta.src_l4_port : range @name("meta.src_l4_port:src_l4_port");
+            meta.dst_l4_port : range @name("meta.dst_l4_port:dst_l4_port");
         }
 
         actions = {
@@ -209,15 +214,19 @@ control outbound(inout headers_t hdr,
     }
 
     apply {
+        meta.transit_to = MATCH_START;
+        //TODO: temporary, should be generic per object model
+        meta.pipeline_oid = meta.eni_id;
+        meta.use_src = false;
+        meta.lkp_addr_is_v6 = meta.is_overlay_ip_v6;
+        if (meta.use_src) {
+            meta.lkp_addr = meta.src_ip_addr;
+        } else {
+            meta.lkp_addr = meta.dst_ip_addr;
+        }
 
 #define DO_MATCH_ROUTING(n) \
         if (meta.transit_to == MATCH_ROUTING##n) {  \
-            if (meta.use_src) {  \
-                meta.lkp_addr = meta.key_metadata.src_addr;  \
-            } else {  \
-                meta.lkp_addr = meta.key_metadata.dst_addr;  \
-            }  \
-            meta.old = meta.pipeline_oid; \
             routing##n.apply();  \
         }
 
@@ -239,6 +248,8 @@ control outbound(inout headers_t hdr,
         }
 
         // Apply route actions
+        // FIXME: action order ??
+        // tcp/udp -- overlay_ip -- overlay_ether -- underlay .... ??
         if (meta.routing_type & ACTION_STATICENCAP) {
             do_staticencap();
         }
@@ -247,6 +258,16 @@ control outbound(inout headers_t hdr,
         }
         if (meta.routing_type & ACTION_4to6) {
             do_4to6();
+        }
+
+        if (meta.routing_type & ACTION_NAT) {
+            do_nat(meta.encap_data.overlay_sip,
+                   meta.encap_data.overlay_dip,
+                   meta.encap_data.nat_src_port,
+                   meta.encap_data.nat_dst_port,
+                   // FIXME: nat_sport/dport base
+                   meta.src_l4_port,
+                   meta.dst_l4_port);
         }
     }
 }

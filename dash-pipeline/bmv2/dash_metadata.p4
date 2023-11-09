@@ -10,7 +10,16 @@ struct encap_data_t {
     IPv4Address underlay_dip;
     EthernetAddress underlay_smac;
     EthernetAddress underlay_dmac;
+
+    bit<1> is_overlay_ip_v6;
+    IPv4ORv6Address overlay_sip;
+    IPv4ORv6Address overlay_dip;
+    EthernetAddress overlay_smac;
     EthernetAddress overlay_dmac;
+
+    bit<16> nat_src_port;
+    bit<16> nat_dst_port;
+
     dash_encapsulation_t dash_encapsulation;
     bit<24> service_tunnel_key;
     IPv4Address original_overlay_sip;
@@ -54,10 +63,30 @@ enum bit<16> dash_routing_type_t {
     PRIVATELINKNAT = 8
 }
 
+typedef bit<32> RoutingType_t;
+#define ACTION_STATICENCAP      (1<<0)
+#define ACTION_TUNNEL           (1<<1)
+#define ACTION_4to6             (1<<2)
+#define ACTION_6to4             (1<<3)
+#define ACTION_NAT              (1<<4)
+
+typedef bit<32> Oid_t;
+typedef bit<8> MatchStage_t;
+#define MATCH_END           0
+#define MATCH_START         1
+#define MATCH_ROUTING0      1
+#define MATCH_ROUTING1      2
+#define MATCH_IPMAPPING0    3
+#define MATCH_IPMAPPING1    4
+#define MATCH_TCPPORTMAPPING   5
+#define MATCH_UDPPORTMAPPING   6
+
+typedef bit<16> Nexthop_t;
+
 struct metadata_t {
     bool dropped;
     dash_direction_t direction;
-    dash_routing_type_t routing_type;
+    RoutingType_t routing_type;
     encap_data_t encap_data;
     EthernetAddress eni_addr;
     bit<16> vnet_id;
@@ -67,11 +96,12 @@ struct metadata_t {
     bit<16> inbound_vm_id;
     bit<8> appliance_id;
     bit<1> is_overlay_ip_v6;
-    bit<1> is_lkup_dst_ip_v6;
     bit<8> ip_protocol;
     IPv4ORv6Address dst_ip_addr;
     IPv4ORv6Address src_ip_addr;
-    IPv4ORv6Address lkup_dst_ip_addr;
+    bit<1> lkp_addr_is_v6;
+    IPv4ORv6Address lkp_addr;
+    bool use_src;
     conntrack_data_t conntrack_data;
     bit<16> src_l4_port;
     bit<16> dst_l4_port;
@@ -88,6 +118,14 @@ struct metadata_t {
     bit<16> mapping_meter_class;
     bit<16> meter_class;
     bit<32> meter_bucket_index;
+
+
+    MatchStage_t transit_to;
+    Nexthop_t nexthop;
+    Oid_t mapping_oid;
+    Oid_t pipeline_oid;
+    Oid_t tcpportmap_oid;
+    Oid_t udpportmap_oid;
 }
 
 #endif /* _SIRIUS_METADATA_P4_ */

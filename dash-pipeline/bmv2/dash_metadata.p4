@@ -17,10 +17,12 @@ struct encap_data_t {
     EthernetAddress overlay_smac;
     EthernetAddress overlay_dmac;
 
-    bit<16> nat_src_port;
-    bit<16> nat_dst_port;
+    bit<16> nat_sport;
+    bit<16> nat_dport;
+    bit<16> nat_sport_base;
+    bit<16> nat_dport_base;
 
-    dash_encapsulation_t dash_encapsulation;
+    dash_encapsulation_t encap_type;
     bit<24> service_tunnel_key;
     IPv4Address original_overlay_sip;
     IPv4Address original_overlay_dip;
@@ -51,24 +53,14 @@ struct eni_data_t {
     IPv4Address pl_underlay_sip;
 }
 
-enum bit<16> dash_routing_type_t {
-    DIRECT = 0,
-    VNET = 1,
-    VNET_DIRECT = 2,
-    VNET_ENCAP = 3,
-    SERVICETUNNEL = 4,
-    PRIVATELINK = 5,
-    PRIVATELINKNSG = 6,
-    PRIVATELINKMAP = 7,
-    PRIVATELINKNAT = 8
-}
-
 typedef bit<32> RoutingType_t;
 #define ACTION_STATICENCAP      (1<<0)
 #define ACTION_TUNNEL           (1<<1)
 #define ACTION_4to6             (1<<2)
 #define ACTION_6to4             (1<<3)
 #define ACTION_NAT              (1<<4)
+#define ACTION_REVERSE_TUNNEL   (1<<5)
+#define ACTION_TUNNEL_FROM_ENCAP    (1<<6)
 
 typedef bit<32> Oid_t;
 typedef bit<8> MatchStage_t;
@@ -82,6 +74,12 @@ typedef bit<8> MatchStage_t;
 #define MATCH_UDPPORTMAPPING   6
 
 typedef bit<16> Nexthop_t;
+
+typedef bit<8> TunnelTarget_t;
+#define TUNNEL_UNDERLAY0 1
+#define TUNNEL_UNDERLAY1 2
+
+typedef bit<8> TunnelId_t;
 
 struct metadata_t {
     bool dropped;
@@ -126,6 +124,21 @@ struct metadata_t {
     Oid_t pipeline_oid;
     Oid_t tcpportmap_oid;
     Oid_t udpportmap_oid;
+
+    TunnelTarget_t tunnel_source;
+    TunnelTarget_t tunnel_target;
+    TunnelId_t tunnel_underlay0_id;
+    TunnelId_t tunnel_underlay1_id;
+
+	bit<128> sip_4to6_encoding_value;
+	bit<128> sip_4to6_encoding_mask;
+	bit<128> dip_4to6_encoding_value;
+	bit<128> dip_4to6_encoding_mask;
+
+	bit<32> sip_6to4_encoding_value;
+	bit<32> sip_6to4_encoding_mask;
+	bit<32> dip_6to4_encoding_value;
+	bit<32> dip_6to4_encoding_mask;
 }
 
 #endif /* _SIRIUS_METADATA_P4_ */

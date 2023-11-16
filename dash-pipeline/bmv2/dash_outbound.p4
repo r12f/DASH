@@ -5,6 +5,7 @@
 #include "dash_acl.p4"
 #include "dash_conntrack.p4"
 #include "dash_service_tunnel.p4"
+#include "dash_routeaction.p4"
 
 
 control outbound(inout headers_t hdr,
@@ -14,64 +15,8 @@ control outbound(inout headers_t hdr,
         meta.dropped = true;
     }
 
-    /*
-     * Packet transformation actions
-     */
-    action do_staticencap() {
-        if (meta.encap_data.encap_type == dash_encapsulation_t.VXLAN) {
-            vxlan_encap(hdr,
-                        meta.encap_data.underlay_dmac,
-                        meta.encap_data.underlay_smac,
-                        meta.encap_data.underlay_dip,
-                        meta.encap_data.underlay_sip,
-                        meta.encap_data.overlay_dmac,
-                        meta.encap_data.encap_vni);
-        } else if (meta.encap_data.encap_type == dash_encapsulation_t.NVGRE) {
-            nvgre_encap(hdr,
-                        meta.encap_data.underlay_dmac,
-                        meta.encap_data.underlay_smac,
-                        meta.encap_data.underlay_dip,
-                        meta.encap_data.underlay_sip,
-                        meta.encap_data.overlay_dmac,
-                        meta.encap_data.encap_vni);
-        } else {
-            drop();
-        }
-    }
-
-    action do_tunnel() {
-    }
-
-    action do_tunnel_from_encap() {
-    }
-
-    action do_reverse_tunnel() {
-    }
-
-    action do_4to6() {
-    }
-
-    action do_6to4() {
-    }
-
-    action do_nat(IPv4ORv6Address nat_sip,
-                  IPv4ORv6Address nat_dip,
-                  bit<1> ip_is_v6;
-                  bit<16> nat_sport,
-                  bit<16> nat_dport,
-                  bit<16> nat_sport_base,
-                  bit<16> nat_dport_base,
-                  ) {
-        // FIXME: handle udp ...
-        hdr.tcp.src_port = nat_sport + (hdr.tcp.src_port - nat_sport_base);
-        hdr.tcp.dst_port = nat_dport + (hdr.tcp.dst_port - nat_dport_base);
-        // FIXME: IPv6 ....
-        hdr.ipv4.src_addr = (bit<32>)nat_sip;
-        hdr.ipv4.dst_addr = (bit<32>)nat_dip;
-    }
-
     action outbound_metadata_publish(MatchStage_t next_stage,
-                                     bit<16> routing_type,
+                                     RoutingType_t routing_type,
                                      Nexthop_t nexthop,
                                      Oid_t pipeline_oid,
                                      Oid_t mapping_oid,
@@ -79,8 +24,22 @@ control outbound(inout headers_t hdr,
                                      Oid_t udpportmap_oid,
                                      bit<1> lkp_addr_is_v6,
                                      IPv4ORv6Address lkp_addr,
-                                     bit<16> nat_src_port,
-                                     bit<16> nat_dst_port,
+                                     TunnelTarget_t tunnel_source,
+                                     TunnelTarget_t tunnel_target,
+                                     TunnelId_t tunnel_underlay0_id,
+                                     TunnelId_t tunnel_underlay1_id,
+                                     bit<16> nat_sport,
+                                     bit<16> nat_dport,
+                                     bit<16> nat_sport_base,
+                                     bit<16> nat_dport_base,
+                                     bit<128> sip_4to6_encoding_value,
+                                     bit<128> sip_4to6_encoding_mask,
+                                     bit<128> dip_4to6_encoding_value,
+                                     bit<128> dip_4to6_encoding_mask,
+                                     bit<32> sip_6to4_encoding_value,
+                                     bit<32> sip_6to4_encoding_mask,
+                                     bit<32> dip_6to4_encoding_value,
+                                     bit<32> dip_6to4_encoding_mask,
                                      bit<1> is_overlay_ip_v6,
                                      IPv4ORv6Address overlay_sip,
                                      IPv4ORv6Address overlay_dip,
@@ -105,8 +64,25 @@ control outbound(inout headers_t hdr,
         meta.lkp_addr = lkp_addr != 0 ? lkp_addr : meta.lkp_addr;
         meta.lkp_addr_is_v6 = lkp_addr_is_v6 != 0 ? lkp_addr_is_v6 : meta.lkp_addr_is_v6;
 
-        meta.encap_data.nat_src_port = nat_src_port != 0 ? nat_src_port : meta.encap_data.nat_src_port;
-        meta.encap_data.nat_dst_port = nat_dst_port != 0 ? nat_dst_port : meta.encap_data.nat_dst_port;
+        meta.tunnel_source = tunnel_source != 0 ? tunnel_source : meta.tunnel_source;
+        meta.tunnel_target = tunnel_target != 0 ? tunnel_target : meta.tunnel_target;
+        meta.tunnel_underlay0_id = tunnel_underlay0_id != 0 ? tunnel_underlay0_id : meta.tunnel_underlay0_id;
+        meta.tunnel_underlay1_id = tunnel_underlay1_id != 0 ? tunnel_underlay1_id : meta.tunnel_underlay1_id;
+
+        meta.sip_4to6_encoding_value = (meta.sip_4to6_encoding_value & ~sip_4to6_encoding_mask) | sip_4to6_encoding_value;
+        meta.sip_4to6_encoding_mask = meta.sip_4to6_encoding_mask | sip_4to6_encoding_mask;
+        meta.dip_4to6_encoding_value = (meta.dip_4to6_encoding_value & ~dip_4to6_encoding_mask) | dip_4to6_encoding_value;
+        meta.dip_4to6_encoding_mask = meta.dip_4to6_encoding_mask | dip_4to6_encoding_mask;
+
+        meta.sip_6to4_encoding_value = (meta.sip_6to4_encoding_value & ~sip_6to4_encoding_mask) | sip_6to4_encoding_value;
+        meta.sip_6to4_encoding_mask = meta.sip_6to4_encoding_mask | sip_6to4_encoding_mask;
+        meta.dip_6to4_encoding_value = (meta.dip_6to4_encoding_value & ~dip_6to4_encoding_mask) | dip_6to4_encoding_value;
+        meta.dip_6to4_encoding_mask = meta.dip_6to4_encoding_mask | dip_6to4_encoding_mask;
+
+        meta.encap_data.nat_sport = nat_sport != 0 ? nat_sport : meta.encap_data.nat_sport;
+        meta.encap_data.nat_dport = nat_dport != 0 ? nat_dport : meta.encap_data.nat_dport;
+        meta.encap_data.nat_sport_base = nat_sport_base != 0 ? nat_sport_base : meta.encap_data.nat_sport_base;
+        meta.encap_data.nat_dport_base = nat_dport_base != 0 ? nat_dport_base : meta.encap_data.nat_dport_base;
 
         meta.encap_data.is_overlay_ip_v6 = is_overlay_ip_v6 != 0 ? is_overlay_ip_v6 : meta.encap_data.is_overlay_ip_v6;
         meta.encap_data.overlay_sip = overlay_sip != 0 ? overlay_sip : meta.encap_data.overlay_sip;
@@ -114,8 +90,8 @@ control outbound(inout headers_t hdr,
         meta.encap_data.overlay_smac = overlay_smac != 0 ? overlay_smac : meta.encap_data.overlay_smac;
         meta.encap_data.overlay_dmac = overlay_dmac != 0 ? overlay_dmac : meta.encap_data.overlay_dmac;
 
-        meta.encap_data.encap_type = encap_type != 0 ? encap_type : meta.enap_data.encap_type;
-        meta.encap_data.encap_vni = encap_vni != 0 ? encap_vni : meta.enap_data.encap_vni;
+        meta.encap_data.encap_type = encap_type != 0 ? encap_type : meta.encap_data.encap_type;
+        meta.encap_data.vni = encap_vni != 0 ? encap_vni : meta.encap_data.vni;
 
         meta.encap_data.underlay_sip = underlay_sip != 0 ? underlay_sip : meta.encap_data.underlay_sip;
         meta.encap_data.underlay_dip = underlay_dip != 0 ? underlay_dip : meta.encap_data.underlay_dip;
@@ -214,9 +190,30 @@ control outbound(inout headers_t hdr,
     }
 
     apply {
+#ifdef STATEFUL_P4
+           ConntrackOut.apply(0);
+#endif /* STATEFUL_P4 */
+
+#ifdef PNA_CONNTRACK
+        ConntrackOut.apply(hdr, meta);
+#endif // PNA_CONNTRACK
+
+        /* ACL */
+        if (!meta.conntrack_data.allow_out) {
+            acl.apply(hdr, meta);
+        }
+
+#ifdef STATEFUL_P4
+            ConntrackIn.apply(1);
+#endif /* STATEFUL_P4 */
+
+#ifdef PNA_CONNTRACK
+        ConntrackIn.apply(hdr, meta);
+#endif // PNA_CONNTRACK
+
         meta.transit_to = MATCH_START;
         //TODO: temporary, should be generic per object model
-        meta.pipeline_oid = meta.eni_id;
+        meta.pipeline_oid = (Oid_t)meta.eni_id;
         meta.use_src = false;
         meta.lkp_addr_is_v6 = meta.is_overlay_ip_v6;
         if (meta.use_src) {
@@ -250,24 +247,32 @@ control outbound(inout headers_t hdr,
         // Apply route actions
         // FIXME: action order ??
         // tcp/udp -- overlay_ip -- overlay_ether -- underlay .... ??
-        if (meta.routing_type & ACTION_STATICENCAP) {
-            do_staticencap();
-        }
-        if (meta.routing_type & ACTION_TUNNEL) {
-            do_tunnel();
-        }
-        if (meta.routing_type & ACTION_4to6) {
-            do_4to6();
+        if ((meta.routing_type & ACTION_STATICENCAP) != 0) {
+            action_staticencap.apply(hdr, meta);
         }
 
-        if (meta.routing_type & ACTION_NAT) {
-            do_nat(meta.encap_data.overlay_sip,
-                   meta.encap_data.overlay_dip,
-                   meta.encap_data.nat_src_port,
-                   meta.encap_data.nat_dst_port,
-                   // FIXME: nat_sport/dport base
-                   meta.src_l4_port,
-                   meta.dst_l4_port);
+        if ((meta.routing_type & ACTION_TUNNEL) != 0) {
+            action_tunnel.apply(hdr, meta);
+        }
+
+        if ((meta.routing_type & ACTION_REVERSE_TUNNEL) != 0) {
+            action_reverse_tunnel.apply(hdr, meta);
+        }
+
+        if ((meta.routing_type & ACTION_TUNNEL_FROM_ENCAP) != 0) {
+            action_tunnel_from_encap.apply(hdr, meta);
+        }
+
+        if ((meta.routing_type & ACTION_4to6) != 0) {
+            action_4to6.apply(hdr, meta);
+        }
+
+        if ((meta.routing_type & ACTION_6to4) != 0) {
+            action_6to4.apply(hdr, meta);
+        }
+
+        if ((meta.routing_type & ACTION_NAT) != 0) {
+            action_nat.apply(hdr, meta);
         }
     }
 }

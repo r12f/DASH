@@ -15,19 +15,19 @@ control outbound(inout headers_t hdr,
         meta.dropped = true;
     }
 
-    action outbound_metadata_publish(MatchStage_t next_stage,
-                                     RoutingType_t routing_type,
+    action outbound_metadata_publish(DashMatchStage_t next_stage,
+                                     DashRoutingType_t routing_type,
                                      Nexthop_t nexthop,
-                                     Oid_t pipeline_oid,
-                                     Oid_t mapping_oid,
-                                     Oid_t tcpportmap_oid,
-                                     Oid_t udpportmap_oid,
-                                     bit<1> lkp_addr_is_v6,
-                                     IPv4ORv6Address lkp_addr,
-                                     TunnelTarget_t tunnel_source,
-                                     TunnelTarget_t tunnel_target,
-                                     TunnelId_t tunnel_underlay0_id,
-                                     TunnelId_t tunnel_underlay1_id,
+                                     DashOid_t pipeline_oid,
+                                     DashOid_t mapping_oid,
+                                     DashOid_t tcpportmap_oid,
+                                     DashOid_t udpportmap_oid,
+                                     bit<1> lookup_addr_is_v6,
+                                     IPv4ORv6Address lookup_addr,
+                                     DashTunnelTarget_t tunnel_source,
+                                     DashTunnelTarget_t tunnel_target,
+                                     DashTunnelId_t tunnel_underlay0_id,
+                                     DashTunnelId_t tunnel_underlay1_id,
                                      bit<16> nat_sport,
                                      bit<16> nat_dport,
                                      bit<16> nat_sport_base,
@@ -61,8 +61,8 @@ control outbound(inout headers_t hdr,
         meta.tcpportmap_oid = tcpportmap_oid != 0 ? tcpportmap_oid : meta.tcpportmap_oid;
         meta.udpportmap_oid = udpportmap_oid != 0 ? udpportmap_oid : meta.udpportmap_oid;
 
-        meta.lkp_addr = lkp_addr != 0 ? lkp_addr : meta.lkp_addr;
-        meta.lkp_addr_is_v6 = lkp_addr_is_v6 != 0 ? lkp_addr_is_v6 : meta.lkp_addr_is_v6;
+        meta.lookup_addr = lookup_addr != 0 ? lookup_addr : meta.lookup_addr;
+        meta.lookup_addr_is_v6 = lookup_addr_is_v6 != 0 ? lookup_addr_is_v6 : meta.lookup_addr_is_v6;
 
         meta.tunnel_source = tunnel_source != 0 ? tunnel_source : meta.tunnel_source;
         meta.tunnel_target = tunnel_target != 0 ? tunnel_target : meta.tunnel_target;
@@ -103,8 +103,8 @@ control outbound(inout headers_t hdr,
     table routing0 {
         key = {
             meta.pipeline_oid : exact @name("meta.pipeline_oid:pipeline_oid");
-            meta.lkp_addr_is_v6 : exact @name("meta.lkp_addr_is_v6:lkp_addr_is_v6");
-            meta.lkp_addr : lpm @name("meta.lkp_addr:lkp_addr");
+            meta.lookup_addr_is_v6 : exact @name("meta.lookup_addr_is_v6:lookup_addr_is_v6");
+            meta.lookup_addr : lpm @name("meta.lookup_addr:lookup_addr");
         }
 
         actions = {
@@ -118,8 +118,8 @@ control outbound(inout headers_t hdr,
     table routing1 {
         key = {
             meta.pipeline_oid : exact @name("meta.pipeline_oid:pipeline_oid");
-            meta.lkp_addr_is_v6 : exact @name("meta.lkp_addr_is_v6:lkp_addr_is_v6");
-            meta.lkp_addr : lpm @name("meta.lkp_addr:lkp_addr");
+            meta.lookup_addr_is_v6 : exact @name("meta.lookup_addr_is_v6:lookup_addr_is_v6");
+            meta.lookup_addr : lpm @name("meta.lookup_addr:lookup_addr");
         }
 
         actions = {
@@ -133,8 +133,8 @@ control outbound(inout headers_t hdr,
     table ipmapping0 {
         key = {
             meta.mapping_oid : exact @name("meta.mapping_oid:mapping_oid");
-            meta.lkp_addr_is_v6 : exact @name("meta.lkp_addr_is_v6:lkp_addr_is_v6");
-            meta.lkp_addr : exact @name("meta.lkp_addr:lkp_addr");
+            meta.lookup_addr_is_v6 : exact @name("meta.lookup_addr_is_v6:lookup_addr_is_v6");
+            meta.lookup_addr : exact @name("meta.lookup_addr:lookup_addr");
         }
 
         actions = {
@@ -148,8 +148,8 @@ control outbound(inout headers_t hdr,
     table ipmapping1 {
         key = {
             meta.mapping_oid : exact @name("meta.mapping_oid:mapping_oid");
-            meta.lkp_addr_is_v6 : exact @name("meta.lkp_addr_is_v6:lkp_addr_is_v6");
-            meta.lkp_addr : exact @name("meta.lkp_addr:lkp_addr");
+            meta.lookup_addr_is_v6 : exact @name("meta.lookup_addr_is_v6:lookup_addr_is_v6");
+            meta.lookup_addr : exact @name("meta.lookup_addr:lookup_addr");
         }
 
         actions = {
@@ -211,19 +211,19 @@ control outbound(inout headers_t hdr,
         ConntrackIn.apply(hdr, meta);
 #endif // PNA_CONNTRACK
 
-        meta.transit_to = MATCH_START;
+        meta.transit_to = DashMatchStage_t.MATCH_START;
         //TODO: temporary, should be generic per object model
-        meta.pipeline_oid = (Oid_t)meta.eni_id;
+        meta.pipeline_oid = (DashOid_t)meta.eni_id;
         meta.use_src = false;
-        meta.lkp_addr_is_v6 = meta.is_overlay_ip_v6;
+        meta.lookup_addr_is_v6 = meta.is_overlay_ip_v6;
         if (meta.use_src) {
-            meta.lkp_addr = meta.src_ip_addr;
+            meta.lookup_addr = meta.src_ip_addr;
         } else {
-            meta.lkp_addr = meta.dst_ip_addr;
+            meta.lookup_addr = meta.dst_ip_addr;
         }
 
 #define DO_MATCH_ROUTING(n) \
-        if (meta.transit_to == MATCH_ROUTING##n) {  \
+        if (meta.transit_to == DashMatchStage_t.MATCH_ROUTING##n) {  \
             routing##n.apply();  \
         }
 
@@ -231,16 +231,16 @@ control outbound(inout headers_t hdr,
         DO_MATCH_ROUTING(1)
 
 #define DO_MATCH_IPMAPPING(n) \
-        if (meta.transit_to == MATCH_IPMAPPING##n) {  \
+        if (meta.transit_to == DashMatchStage_t.MATCH_IPMAPPING##n) {  \
             ipmapping##n.apply();  \
         }
 
         DO_MATCH_IPMAPPING(0)
         DO_MATCH_IPMAPPING(1)
 
-        if (meta.transit_to == MATCH_TCPPORTMAPPING) {
+        if (meta.transit_to == DashMatchStage_t.MATCH_TCPPORTMAPPING) {
             tcpportmapping.apply();
-        } else if (meta.transit_to == MATCH_UDPPORTMAPPING) {
+        } else if (meta.transit_to == DashMatchStage_t.MATCH_UDPPORTMAPPING) {
             udpportmapping.apply();
         }
 

@@ -26,10 +26,6 @@ struct encap_data_t {
     bit<24> service_tunnel_key;
     IPv4Address original_overlay_sip;
     IPv4Address original_overlay_dip;
-    IPv6Address st_dst;
-    IPv6Address st_dst_mask;
-    IPv6Address st_src;
-    IPv6Address st_src_mask;
 }
 
 enum bit<16> dash_direction_t {
@@ -53,7 +49,7 @@ struct eni_data_t {
     IPv4Address pl_underlay_sip;
 }
 
-typedef bit<32> RoutingType_t;
+typedef bit<32> DashRoutingType_t;
 #define ACTION_STATICENCAP      (1<<0)
 #define ACTION_TUNNEL           (1<<1)
 #define ACTION_4to6             (1<<2)
@@ -62,29 +58,31 @@ typedef bit<32> RoutingType_t;
 #define ACTION_REVERSE_TUNNEL   (1<<5)
 #define ACTION_TUNNEL_FROM_ENCAP    (1<<6)
 
-typedef bit<32> Oid_t;
-typedef bit<8> MatchStage_t;
-#define MATCH_END           0
-#define MATCH_START         1
-#define MATCH_ROUTING0      1
-#define MATCH_ROUTING1      2
-#define MATCH_IPMAPPING0    3
-#define MATCH_IPMAPPING1    4
-#define MATCH_TCPPORTMAPPING   5
-#define MATCH_UDPPORTMAPPING   6
+typedef bit<32> DashOid_t;
+
+enum bit<8> DashMatchStage_t {
+    MATCH_END            = 0,
+    MATCH_START          = 1,
+    MATCH_ROUTING0       = 1,
+    MATCH_ROUTING1       = 2,
+    MATCH_IPMAPPING0     = 3,
+    MATCH_IPMAPPING1     = 4,
+    MATCH_TCPPORTMAPPING = 5,
+    MATCH_UDPPORTMAPPING = 6
+}
 
 typedef bit<16> Nexthop_t;
 
-typedef bit<8> TunnelTarget_t;
+typedef bit<8> DashTunnelTarget_t;
 #define TUNNEL_UNDERLAY0 1
 #define TUNNEL_UNDERLAY1 2
 
-typedef bit<8> TunnelId_t;
+typedef bit<16> DashTunnelId_t;
 
 struct metadata_t {
     bool dropped;
     dash_direction_t direction;
-    RoutingType_t routing_type;
+    DashRoutingType_t routing_type;
     encap_data_t encap_data;
     EthernetAddress eni_addr;
     bit<16> vnet_id;
@@ -97,8 +95,8 @@ struct metadata_t {
     bit<8> ip_protocol;
     IPv4ORv6Address dst_ip_addr;
     IPv4ORv6Address src_ip_addr;
-    bit<1> lkp_addr_is_v6;
-    IPv4ORv6Address lkp_addr;
+    bit<1> lookup_addr_is_v6;
+    IPv4ORv6Address lookup_addr;
     bool use_src;
     conntrack_data_t conntrack_data;
     bit<16> src_l4_port;
@@ -118,17 +116,17 @@ struct metadata_t {
     bit<32> meter_bucket_index;
 
 
-    MatchStage_t transit_to;
+    DashMatchStage_t transit_to;
     Nexthop_t nexthop;
-    Oid_t mapping_oid;
-    Oid_t pipeline_oid;
-    Oid_t tcpportmap_oid;
-    Oid_t udpportmap_oid;
+    DashOid_t mapping_oid;
+    DashOid_t pipeline_oid;
+    DashOid_t tcpportmap_oid;
+    DashOid_t udpportmap_oid;
 
-    TunnelTarget_t tunnel_source;
-    TunnelTarget_t tunnel_target;
-    TunnelId_t tunnel_underlay0_id;
-    TunnelId_t tunnel_underlay1_id;
+    DashTunnelTarget_t tunnel_source;
+    DashTunnelTarget_t tunnel_target;
+    DashTunnelId_t tunnel_underlay0_id;
+    DashTunnelId_t tunnel_underlay1_id;
 
 	bit<128> sip_4to6_encoding_value;
 	bit<128> sip_4to6_encoding_mask;

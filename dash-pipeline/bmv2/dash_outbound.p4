@@ -15,19 +15,19 @@ control outbound(inout headers_t hdr,
         meta.dropped = true;
     }
 
-    action outbound_metadata_publish(DashMatchStage_t next_stage,
-                                     DashRoutingType_t routing_type,
-                                     Nexthop_t nexthop,
-                                     DashOid_t pipeline_oid,
-                                     DashOid_t mapping_oid,
-                                     DashOid_t tcpportmap_oid,
-                                     DashOid_t udpportmap_oid,
+    action outbound_metadata_publish(dash_match_stage_t next_stage,
+                                     dash_routing_type_t routing_type,
+                                     nexthop_t nexthop,
+                                     dash_oid_t pipeline_oid,
+                                     dash_oid_t mapping_oid,
+                                     dash_oid_t tcpportmap_oid,
+                                     dash_oid_t udpportmap_oid,
                                      bit<1> lookup_addr_is_v6,
                                      IPv4ORv6Address lookup_addr,
-                                     DashTunnelTarget_t tunnel_source,
-                                     DashTunnelTarget_t tunnel_target,
-                                     DashTunnelId_t tunnel_underlay0_id,
-                                     DashTunnelId_t tunnel_underlay1_id,
+                                     dash_tunnel_target_t tunnel_source,
+                                     dash_tunnel_target_t tunnel_target,
+                                     dash_tunnel_id_t tunnel_underlay0_id,
+                                     dash_tunnel_id_t tunnel_underlay1_id,
                                      bit<16> nat_sport,
                                      bit<16> nat_dport,
                                      bit<16> nat_sport_base,
@@ -211,9 +211,9 @@ control outbound(inout headers_t hdr,
         ConntrackIn.apply(hdr, meta);
 #endif // PNA_CONNTRACK
 
-        meta.transit_to = DashMatchStage_t.MATCH_START;
+        meta.transit_to = dash_match_stage_t.MATCH_START;
         //TODO: temporary, should be generic per object model
-        meta.pipeline_oid = (DashOid_t)meta.eni_id;
+        meta.pipeline_oid = (dash_oid_t)meta.eni_id;
         meta.use_src = false;
         meta.lookup_addr_is_v6 = meta.is_overlay_ip_v6;
         if (meta.use_src) {
@@ -223,7 +223,7 @@ control outbound(inout headers_t hdr,
         }
 
 #define DO_MATCH_ROUTING(n) \
-        if (meta.transit_to == DashMatchStage_t.MATCH_ROUTING##n) {  \
+        if (meta.transit_to == dash_match_stage_t.MATCH_ROUTING##n) {  \
             routing##n.apply();  \
         }
 
@@ -231,16 +231,16 @@ control outbound(inout headers_t hdr,
         DO_MATCH_ROUTING(1)
 
 #define DO_MATCH_IPMAPPING(n) \
-        if (meta.transit_to == DashMatchStage_t.MATCH_IPMAPPING##n) {  \
+        if (meta.transit_to == dash_match_stage_t.MATCH_IPMAPPING##n) {  \
             ipmapping##n.apply();  \
         }
 
         DO_MATCH_IPMAPPING(0)
         DO_MATCH_IPMAPPING(1)
 
-        if (meta.transit_to == DashMatchStage_t.MATCH_TCPPORTMAPPING) {
+        if (meta.transit_to == dash_match_stage_t.MATCH_TCPPORTMAPPING) {
             tcpportmapping.apply();
-        } else if (meta.transit_to == DashMatchStage_t.MATCH_UDPPORTMAPPING) {
+        } else if (meta.transit_to == dash_match_stage_t.MATCH_UDPPORTMAPPING) {
             udpportmapping.apply();
         }
 

@@ -49,7 +49,7 @@ struct eni_data_t {
     IPv4Address pl_underlay_sip;
 }
 
-typedef bit<32> DashRoutingType_t;
+typedef bit<32> dash_routing_type_t;
 #define ACTION_STATICENCAP      (1<<0)
 #define ACTION_TUNNEL           (1<<1)
 #define ACTION_4to6             (1<<2)
@@ -58,9 +58,9 @@ typedef bit<32> DashRoutingType_t;
 #define ACTION_REVERSE_TUNNEL   (1<<5)
 #define ACTION_TUNNEL_FROM_ENCAP    (1<<6)
 
-typedef bit<32> DashOid_t;
+typedef bit<32> dash_oid_t;
 
-enum bit<8> DashMatchStage_t {
+enum bit<8> dash_match_stage_t {
     MATCH_END            = 0,
     MATCH_START          = 1,
     MATCH_ROUTING0       = 1,
@@ -71,18 +71,18 @@ enum bit<8> DashMatchStage_t {
     MATCH_UDPPORTMAPPING = 6
 }
 
-typedef bit<16> Nexthop_t;
+typedef bit<16> nexthop_t;
 
-typedef bit<8> DashTunnelTarget_t;
+typedef bit<8> dash_tunnel_target_t;
 #define TUNNEL_UNDERLAY0 1
 #define TUNNEL_UNDERLAY1 2
 
-typedef bit<16> DashTunnelId_t;
+typedef bit<16> dash_tunnel_id_t;
 
 struct metadata_t {
     bool dropped;
     dash_direction_t direction;
-    DashRoutingType_t routing_type;
+    dash_routing_type_t routing_type;
     encap_data_t encap_data;
     EthernetAddress eni_addr;
     bit<16> vnet_id;
@@ -116,17 +116,17 @@ struct metadata_t {
     bit<32> meter_bucket_index;
 
 
-    DashMatchStage_t transit_to;
-    Nexthop_t nexthop;
-    DashOid_t mapping_oid;
-    DashOid_t pipeline_oid;
-    DashOid_t tcpportmap_oid;
-    DashOid_t udpportmap_oid;
+    dash_match_stage_t transit_to;
+    nexthop_t nexthop;
+    dash_oid_t mapping_oid;
+    dash_oid_t pipeline_oid;
+    dash_oid_t tcpportmap_oid;
+    dash_oid_t udpportmap_oid;
 
-    DashTunnelTarget_t tunnel_source;
-    DashTunnelTarget_t tunnel_target;
-    DashTunnelId_t tunnel_underlay0_id;
-    DashTunnelId_t tunnel_underlay1_id;
+    dash_tunnel_target_t tunnel_source;
+    dash_tunnel_target_t tunnel_target;
+    dash_tunnel_id_t tunnel_underlay0_id;
+    dash_tunnel_id_t tunnel_underlay1_id;
 
 	bit<128> sip_4to6_encoding_value;
 	bit<128> sip_4to6_encoding_mask;

@@ -93,20 +93,37 @@ header ipv6_t {
 
 const bit<16> IPV6_HDR_SIZE=320/8;
 
+header_union ip_u {
+    ipv4_t  ipv4;
+    ipv6_t  ipv6;
+}
+
+header_union encap_u {
+    vxlan_t  vxlan;
+    nvgre_t  nvgre;
+}
+
 struct headers_t {
+    // underlay 1
+    ethernet_t ethernet_1;
+    ip_u ip_1;
+    ipv4options_t ipv4options_1;
+    udp_t udp_1;
+    encap_u encap_1;
+
+    // underlay 0
+    ethernet_t ethernet_0;
+    ip_u ip_0;
+    ipv4options_t ipv4options_0;
+    udp_t udp_0;
+    encap_u encap_0;
+
+    // overlay
     ethernet_t ethernet;
-    ipv4_t     ipv4;
+    ip_u ip;
     ipv4options_t ipv4options;
-    ipv6_t     ipv6;
-    udp_t      udp;
-    tcp_t      tcp;
-    vxlan_t    vxlan;
-    nvgre_t    nvgre;
-    ethernet_t inner_ethernet;
-    ipv4_t     inner_ipv4;
-    ipv6_t     inner_ipv6;
-    udp_t      inner_udp;
-    tcp_t      inner_tcp;
+    udp_t udp;
+    tcp_t tcp;
 }
 
 enum bit<16> dash_encapsulation_t {

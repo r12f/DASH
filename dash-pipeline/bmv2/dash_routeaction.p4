@@ -88,11 +88,11 @@ control action_tunnel(inout headers_t hdr, inout metadata_t meta)
 
     apply {
         if ((meta.tunnel_target & TUNNEL_UNDERLAY0) != 0) {
-			tunnel_underlay0.apply();
+            tunnel_underlay0.apply();
         }
 
         if ((meta.tunnel_target & TUNNEL_UNDERLAY1) != 0) {
-			tunnel_underlay1.apply();
+            tunnel_underlay1.apply();
         }
     }
 }
@@ -126,41 +126,46 @@ control action_tunnel_from_encap(inout headers_t hdr, inout metadata_t meta)
 control action_4to6(inout headers_t hdr, inout metadata_t meta)
 {
     apply {
-        hdr.ipv6.setValid();
-        hdr.ipv6.version = 6;
-        hdr.ipv6.traffic_class = 0;
-        hdr.ipv6.flow_label = 0;
-        hdr.ipv6.payload_length = hdr.ipv4.total_len - 20;
-        hdr.ipv6.hop_limit = hdr.ipv4.ttl;
-        hdr.ipv6.src_addr = ((bit<128>) hdr.ipv4.src_addr & ~meta.sip_4to6_encoding_mask) \
+        ipv4_t ipv4 = hdr.ip.ipv4;
+
+        hdr.ip.ipv6.setValid();
+        hdr.ip.ipv6.version = 6;
+        hdr.ip.ipv6.traffic_class = 0;
+        hdr.ip.ipv6.flow_label = 0;
+        hdr.ip.ipv6.payload_length = ipv4.total_len - 20;
+        hdr.ip.ipv6.hop_limit = ipv4.ttl;
+        hdr.ip.ipv6.src_addr = ((bit<128>) ipv4.src_addr & ~meta.sip_4to6_encoding_mask) \
                             | meta.sip_4to6_encoding_value;
-        hdr.ipv6.dst_addr = ((bit<128>) hdr.ipv4.dst_addr & ~meta.dip_4to6_encoding_mask) \
+        hdr.ip.ipv6.dst_addr = ((bit<128>) ipv4.dst_addr & ~meta.dip_4to6_encoding_mask) \
                             | meta.dip_4to6_encoding_value;
-        hdr.ipv4.setInvalid();
+        hdr.ip.ipv4.setInvalid();
+        hdr.ethernet.ether_type = IPV6_ETHTYPE;
     }
 }
 
 control action_6to4(inout headers_t hdr, inout metadata_t meta)
 {
     apply {
-        hdr.ipv4.setValid();
-        hdr.ipv4.version = 4;
-        hdr.ipv4.ihl = 5;
-        hdr.ipv4.diffserv = 0;
+        ipv6_t ipv6 = hdr.ip.ipv6;
+
+        hdr.ip.ipv4.setValid();
+        hdr.ip.ipv4.version = 4;
+        hdr.ip.ipv4.ihl = 5;
+        hdr.ip.ipv4.diffserv = 0;
         // FIXME: skip ipv6 option length ??
-        hdr.ipv4.total_len = 20 + hdr.ipv6.payload_length;
-        hdr.ipv4.identification = 1;
-        hdr.ipv4.flags = 0;
-        hdr.ipv4.frag_offset = 0;
-        hdr.ipv4.ttl = hdr.ipv6.hop_limit;
-        // FIXME: skip ipv6 option ??
-        hdr.ipv4.protocol = hdr.ipv6.next_header;
-        hdr.ipv4.hdr_checksum = 0;
-        hdr.ipv4.src_addr = ((bit<32>) hdr.ipv6.src_addr & ~meta.sip_6to4_encoding_mask) \
+        hdr.ip.ipv4.total_len = 20 + ipv6.payload_length;
+        hdr.ip.ipv4.identification = 1;
+        hdr.ip.ipv4.flags = 0;
+        hdr.ip.ipv4.frag_offset = 0;
+        hdr.ip.ipv4.ttl = ipv6.hop_limit;
+        hdr.ip.ipv4.protocol = ipv6.next_header;
+        hdr.ip.ipv4.hdr_checksum = 0;
+        hdr.ip.ipv4.src_addr = ((bit<32>) ipv6.src_addr & ~meta.sip_6to4_encoding_mask) \
                             | meta.sip_6to4_encoding_value;
-        hdr.ipv4.dst_addr = ((bit<32>) hdr.ipv6.dst_addr & ~meta.dip_6to4_encoding_mask) \
+        hdr.ip.ipv4.dst_addr = ((bit<32>) ipv6.dst_addr & ~meta.dip_6to4_encoding_mask) \
                             | meta.dip_6to4_encoding_value;
-        hdr.ipv6.setInvalid();
+        hdr.ip.ipv6.setInvalid();
+        hdr.ethernet.ether_type = IPV4_ETHTYPE;
     }
 }
 
@@ -183,11 +188,11 @@ control action_nat(inout headers_t hdr, inout metadata_t meta)
         }
 
         if (ip_is_v6 != 0) {
-            hdr.ipv6.src_addr = nat_sip;
-            hdr.ipv6.dst_addr = nat_dip;
+            hdr.ip.ipv6.src_addr = nat_sip;
+            hdr.ip.ipv6.dst_addr = nat_dip;
         } else {
-            hdr.ipv4.src_addr = (bit<32>)nat_sip;
-            hdr.ipv4.dst_addr = (bit<32>)nat_dip;
+            hdr.ip.ipv4.src_addr = (bit<32>)nat_sip;
+            hdr.ip.ipv4.dst_addr = (bit<32>)nat_dip;
         }
     }
 

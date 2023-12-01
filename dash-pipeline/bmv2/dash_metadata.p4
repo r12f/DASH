@@ -3,29 +3,13 @@
 
 #include "dash_headers.p4"
 
-struct encap_data_t {
-    bit<24> vni;
-    bit<24> dest_vnet_vni;
-    IPv4Address underlay_sip;
-    IPv4Address underlay_dip;
-    EthernetAddress underlay_smac;
-    EthernetAddress underlay_dmac;
-
-    bit<1> is_ipv6;
-    IPv4ORv6Address overlay_sip;
-    IPv4ORv6Address overlay_dip;
-    EthernetAddress overlay_smac;
-    EthernetAddress overlay_dmac;
-
-    bit<16> nat_sport;
-    bit<16> nat_dport;
-    bit<16> nat_sport_base;
-    bit<16> nat_dport_base;
-
-    dash_encapsulation_t encap_type;
-    bit<24> service_tunnel_key;
-    IPv4Address original_overlay_sip;
-    IPv4Address original_overlay_dip;
+struct dash_tunnel_t {
+    dash_encapsulation_t tunnel_type;
+    bit<24> tunnel_vni;
+    IPv4Address tunnel_sip;
+    IPv4Address tunnel_dip;
+    EthernetAddress tunnel_smac;
+    EthernetAddress tunnel_dmac;
 }
 
 enum bit<16> dash_direction_t {
@@ -37,6 +21,8 @@ enum bit<16> dash_direction_t {
 struct conntrack_data_t {
     bool allow_in;
     bool allow_out;
+    IPv4Address original_overlay_sip;
+    IPv4Address original_overlay_dip;
 }
 
 struct eni_data_t {
@@ -44,9 +30,6 @@ struct eni_data_t {
     bit<32> pps;
     bit<32> flows;
     bit<1>  admin_state;
-    IPv6Address pl_sip;
-    IPv6Address pl_sip_mask;
-    IPv4Address pl_underlay_sip;
 }
 
 typedef bit<32> dash_routing_type_t;
@@ -99,19 +82,31 @@ struct dash_flow_t {
     // flow states
 }
 
+struct dash_nat_t {
+    bit<16> nat_sport;
+    bit<16> nat_dport;
+    bit<16> nat_sport_base;
+    bit<16> nat_dport_base;
+    bit<1> is_ipv6;
+    IPv4ORv6Address nat_sip;
+    IPv4ORv6Address nat_dip;
+    EthernetAddress nat_smac;
+    EthernetAddress nat_dmac;
+}
+
 struct metadata_t {
     pkt_metadata_t pkt_meta;
     dash_flow_t flow;
+    dash_nat_t nat;
+    dash_tunnel_t tunnel_0;
+    dash_tunnel_t tunnel_1;
 
-    dash_routing_type_t routing_type;
-    encap_data_t encap_data;
     EthernetAddress eni_addr;
     bit<16> vnet_id;
     bit<16> dst_vnet_id;
     bit<16> eni_id;
     eni_data_t eni_data;
-    bit<16> inbound_vm_id;
-    bit<8> appliance_id;
+
     conntrack_data_t conntrack_data;
     bit<16> stage1_dash_acl_group_id;
     bit<16> stage2_dash_acl_group_id;
@@ -127,9 +122,8 @@ struct metadata_t {
     bit<16> meter_class;
     bit<32> meter_bucket_index;
 
-
+    dash_routing_type_t routing_type;
     dash_match_stage_t transit_to;
-    nexthop_t nexthop;
     dash_oid_t mapping_oid;
     dash_oid_t pipeline_oid;
     dash_oid_t tcpportmap_oid;

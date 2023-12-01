@@ -17,10 +17,10 @@ control inbound(inout headers_t hdr,
 #ifdef PNA_CONNTRACK
         ConntrackIn.apply(hdr, meta);
 
-        if (meta.encap_data.original_overlay_sip != 0) {
+        if (meta.conntrack_data.original_overlay_sip != 0) {
             service_tunnel_decode(hdr,
-                                  meta.encap_data.original_overlay_sip,
-                                  meta.encap_data.original_overlay_dip);
+                                  meta.conntrack_data.original_overlay_sip,
+                                  meta.conntrack_data.original_overlay_dip);
         }
 #endif // PNA_CONNTRACK
 
@@ -37,12 +37,12 @@ control inbound(inout headers_t hdr,
 #endif //PNA_CONNTRACK
 
         vxlan_encap(hdr,
-                    meta.encap_data.underlay_dmac,
-                    meta.encap_data.underlay_smac,
-                    meta.encap_data.underlay_dip,
-                    meta.encap_data.underlay_sip,
+                    meta.tunnel_0.tunnel_dmac,
+                    meta.tunnel_0.tunnel_smac,
+                    meta.tunnel_0.tunnel_dip,
+                    meta.tunnel_0.tunnel_sip,
                     hdr.ethernet.dst_addr,
-                    meta.encap_data.vni);
+                    meta.tunnel_0.tunnel_vni);
     }
 }
 

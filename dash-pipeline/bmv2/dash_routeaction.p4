@@ -13,22 +13,22 @@ control action_staticencap(inout headers_t hdr, inout metadata_t meta)
     }
 
     apply {
-        if (meta.encap_data.encap_type == dash_encapsulation_t.VXLAN) {
+        if (meta.tunnel_0.tunnel_type == dash_encapsulation_t.VXLAN) {
             vxlan_encap(hdr,
-                        meta.encap_data.underlay_dmac,
-                        meta.encap_data.underlay_smac,
-                        meta.encap_data.underlay_dip,
-                        meta.encap_data.underlay_sip,
-                        meta.encap_data.overlay_dmac,
-                        meta.encap_data.vni);
-        } else if (meta.encap_data.encap_type == dash_encapsulation_t.NVGRE) {
+                        meta.tunnel_0.tunnel_dmac,
+                        meta.tunnel_0.tunnel_smac,
+                        meta.tunnel_0.tunnel_dip,
+                        meta.tunnel_0.tunnel_sip,
+                        meta.nat.nat_dmac,
+                        meta.tunnel_0.tunnel_vni);
+        } else if (meta.tunnel_0.tunnel_type == dash_encapsulation_t.NVGRE) {
             nvgre_encap(hdr,
-                        meta.encap_data.underlay_dmac,
-                        meta.encap_data.underlay_smac,
-                        meta.encap_data.underlay_dip,
-                        meta.encap_data.underlay_sip,
-                        meta.encap_data.overlay_dmac,
-                        meta.encap_data.vni);
+                        meta.tunnel_0.tunnel_dmac,
+                        meta.tunnel_0.tunnel_smac,
+                        meta.tunnel_0.tunnel_dip,
+                        meta.tunnel_0.tunnel_sip,
+                        meta.nat.nat_dmac,
+                        meta.tunnel_0.tunnel_vni);
         } else {
             drop();
         }
@@ -41,14 +41,14 @@ control action_tunnel(inout headers_t hdr, inout metadata_t meta)
         meta.pkt_meta.dropped = true;
     }
 
-    action set_tunnel_underlay0(IPv4Address     underlay_sip,
-                                IPv4Address     underlay_dip,
-                                EthernetAddress underlay_smac,
-                                EthernetAddress underlay_dmac) {
-        meta.encap_data.underlay_sip = underlay_sip != 0 ? underlay_sip : meta.encap_data.underlay_sip;
-        meta.encap_data.underlay_dip = underlay_dip != 0 ? underlay_dip : meta.encap_data.underlay_dip;
-        meta.encap_data.underlay_smac = underlay_smac != 0 ? underlay_smac : meta.encap_data.underlay_smac;
-        meta.encap_data.underlay_dmac = underlay_dmac != 0 ? underlay_dmac : meta.encap_data.underlay_dmac;
+    action set_tunnel_underlay0(IPv4Address     tunnel_sip,
+                                IPv4Address     tunnel_dip,
+                                EthernetAddress tunnel_smac,
+                                EthernetAddress tunnel_dmac) {
+        meta.tunnel_0.tunnel_sip = tunnel_sip != 0 ? tunnel_sip : meta.tunnel_0.tunnel_sip;
+        meta.tunnel_0.tunnel_dip = tunnel_dip != 0 ? tunnel_dip : meta.tunnel_0.tunnel_dip;
+        meta.tunnel_0.tunnel_smac = tunnel_smac != 0 ? tunnel_smac : meta.tunnel_0.tunnel_smac;
+        meta.tunnel_0.tunnel_dmac = tunnel_dmac != 0 ? tunnel_dmac : meta.tunnel_0.tunnel_dmac;
     }
 
     table tunnel_underlay0 {
@@ -63,15 +63,15 @@ control action_tunnel(inout headers_t hdr, inout metadata_t meta)
         const default_action = drop;
     }
 
-    action set_tunnel_underlay1(IPv4Address     underlay_sip,
-                                IPv4Address     underlay_dip,
-                                EthernetAddress underlay_smac,
-                                EthernetAddress underlay_dmac) {
+    action set_tunnel_underlay1(IPv4Address     tunnel_sip,
+                                IPv4Address     tunnel_dip,
+                                EthernetAddress tunnel_smac,
+                                EthernetAddress tunnel_dmac) {
         // FIXME: use underlay1_sip, etc
-        meta.encap_data.underlay_sip = underlay_sip != 0 ? underlay_sip : meta.encap_data.underlay_sip;
-        meta.encap_data.underlay_dip = underlay_dip != 0 ? underlay_dip : meta.encap_data.underlay_dip;
-        meta.encap_data.underlay_smac = underlay_smac != 0 ? underlay_smac : meta.encap_data.underlay_smac;
-        meta.encap_data.underlay_dmac = underlay_dmac != 0 ? underlay_dmac : meta.encap_data.underlay_dmac;
+        meta.tunnel_0.tunnel_sip = tunnel_sip != 0 ? tunnel_sip : meta.tunnel_0.tunnel_sip;
+        meta.tunnel_0.tunnel_dip = tunnel_dip != 0 ? tunnel_dip : meta.tunnel_0.tunnel_dip;
+        meta.tunnel_0.tunnel_smac = tunnel_smac != 0 ? tunnel_smac : meta.tunnel_0.tunnel_smac;
+        meta.tunnel_0.tunnel_dmac = tunnel_dmac != 0 ? tunnel_dmac : meta.tunnel_0.tunnel_dmac;
     }
 
     table tunnel_underlay1 {
@@ -197,13 +197,13 @@ control action_nat(inout headers_t hdr, inout metadata_t meta)
     }
 
     apply {
-        do_nat(meta.encap_data.overlay_sip,
-               meta.encap_data.overlay_dip,
-               meta.encap_data.is_ipv6,
-               meta.encap_data.nat_sport,
-               meta.encap_data.nat_dport,
-               meta.encap_data.nat_sport_base,
-               meta.encap_data.nat_dport_base);
+        do_nat(meta.nat.nat_sip,
+               meta.nat.nat_dip,
+               meta.nat.is_ipv6,
+               meta.nat.nat_sport,
+               meta.nat.nat_dport,
+               meta.nat.nat_sport_base,
+               meta.nat.nat_dport_base);
     }
 }
 

@@ -75,23 +75,6 @@ control dash_ingress(
         const default_action = set_inbound_direction;
     }
 
-    action set_appliance(EthernetAddress neighbor_mac,
-                         EthernetAddress mac) {
-        meta.encap_data.underlay_dmac = neighbor_mac;
-        meta.encap_data.underlay_smac = mac;
-    }
-
-    /* This table API should be implemented manually using underlay SAI */
-    table appliance {
-        key = {
-            meta.appliance_id : ternary @name("meta.appliance_id:appliance_id");
-        }
-
-        actions = {
-            set_appliance;
-        }
-    }
-
 #define ACL_GROUPS_PARAM(prefix) \
     bit<16> ## prefix ##_stage1_dash_acl_group_id, \
     bit<16> ## prefix ##_stage2_dash_acl_group_id, \
@@ -114,9 +97,6 @@ control dash_ingress(
                          @Sai[type="sai_uint32_t"]
                          bit<24> vm_vni,
                          bit<16> vnet_id,
-                         IPv6Address pl_sip,
-                         IPv6Address pl_sip_mask,
-                         IPv4Address pl_underlay_sip,
                          bit<16> v4_meter_policy_id,
                          bit<16> v6_meter_policy_id,
                          ACL_GROUPS_PARAM(inbound_v4),
@@ -127,13 +107,10 @@ control dash_ingress(
         meta.eni_data.pps             = pps;
         meta.eni_data.flows           = flows;
         meta.eni_data.admin_state     = admin_state;
-        meta.eni_data.pl_sip          = pl_sip;
-        meta.eni_data.pl_sip_mask     = pl_sip_mask;
-        meta.eni_data.pl_underlay_sip = pl_underlay_sip;
-        meta.encap_data.underlay_dip  = vm_underlay_dip;
+        meta.tunnel_0.tunnel_dip  = vm_underlay_dip;
         /* vm_vni is the encap VNI used for tunnel between inbound DPU -> VM
          * and not a VNET identifier */
-        meta.encap_data.vni           = vm_vni;
+        meta.tunnel_0.tunnel_vni           = vm_vni;
         meta.vnet_id                  = vnet_id;
 
         if (meta.flow.is_ipv6 == 1) {
@@ -370,13 +347,12 @@ control dash_ingress(
         if (vip.apply().hit) {
             /* Use the same VIP that was in packet's destination if it's
                present in the VIP table */
-            meta.encap_data.underlay_sip = hdr.ip_0.ipv4.dst_addr;
+            meta.tunnel_0.tunnel_sip = hdr.ip_0.ipv4.dst_addr;
         }
 
         /* If Outer VNI matches with a reserved VNI, then the direction is Outbound - */
         direction_lookup.apply();
 
-        appliance.apply();
 
         /* Outer header processing */
 

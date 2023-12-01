@@ -17,7 +17,6 @@ control outbound(inout headers_t hdr,
 
     action outbound_metadata_publish(dash_match_stage_t next_stage,
                                      dash_routing_type_t routing_type,
-                                     nexthop_t nexthop,
                                      dash_oid_t pipeline_oid,
                                      dash_oid_t mapping_oid,
                                      dash_oid_t tcpportmap_oid,
@@ -40,21 +39,20 @@ control outbound(inout headers_t hdr,
                                      bit<32> sip_6to4_encoding_mask,
                                      bit<32> dip_6to4_encoding_value,
                                      bit<32> dip_6to4_encoding_mask,
-                                     bit<1> is_overlay_ip_v6,
-                                     IPv4ORv6Address overlay_sip,
-                                     IPv4ORv6Address overlay_dip,
-                                     EthernetAddress overlay_smac,
-                                     EthernetAddress overlay_dmac,
-                                     dash_encapsulation_t encap_type,
+                                     bit<1> is_nat_ip_v6,
+                                     IPv4ORv6Address nat_sip,
+                                     IPv4ORv6Address nat_dip,
+                                     EthernetAddress nat_smac,
+                                     EthernetAddress nat_dmac,
+                                     dash_encapsulation_t tunnel_type,
                                      bit<24> encap_vni,
-                                     IPv4Address     underlay_sip,
-                                     IPv4Address     underlay_dip,
-                                     EthernetAddress underlay_smac,
-                                     EthernetAddress underlay_dmac
+                                     IPv4Address     tunnel_sip,
+                                     IPv4Address     tunnel_dip,
+                                     EthernetAddress tunnel_smac,
+                                     EthernetAddress tunnel_dmac
                                     ) {
         meta.transit_to = next_stage;
         meta.routing_type = meta.routing_type | routing_type;
-        meta.nexthop = nexthop != 0 ? nexthop : meta.nexthop;
 
         meta.pipeline_oid = pipeline_oid != 0 ? pipeline_oid : meta.pipeline_oid;
         meta.mapping_oid = mapping_oid != 0 ? mapping_oid : meta.mapping_oid;
@@ -79,24 +77,24 @@ control outbound(inout headers_t hdr,
         meta.dip_6to4_encoding_value = (meta.dip_6to4_encoding_value & ~dip_6to4_encoding_mask) | dip_6to4_encoding_value;
         meta.dip_6to4_encoding_mask = meta.dip_6to4_encoding_mask | dip_6to4_encoding_mask;
 
-        meta.encap_data.nat_sport = nat_sport != 0 ? nat_sport : meta.encap_data.nat_sport;
-        meta.encap_data.nat_dport = nat_dport != 0 ? nat_dport : meta.encap_data.nat_dport;
-        meta.encap_data.nat_sport_base = nat_sport_base != 0 ? nat_sport_base : meta.encap_data.nat_sport_base;
-        meta.encap_data.nat_dport_base = nat_dport_base != 0 ? nat_dport_base : meta.encap_data.nat_dport_base;
+        meta.nat.nat_sport = nat_sport != 0 ? nat_sport : meta.nat.nat_sport;
+        meta.nat.nat_dport = nat_dport != 0 ? nat_dport : meta.nat.nat_dport;
+        meta.nat.nat_sport_base = nat_sport_base != 0 ? nat_sport_base : meta.nat.nat_sport_base;
+        meta.nat.nat_dport_base = nat_dport_base != 0 ? nat_dport_base : meta.nat.nat_dport_base;
 
-        meta.encap_data.is_ipv6 = is_overlay_ip_v6 != 0 ? is_overlay_ip_v6 : meta.encap_data.is_ipv6;
-        meta.encap_data.overlay_sip = overlay_sip != 0 ? overlay_sip : meta.encap_data.overlay_sip;
-        meta.encap_data.overlay_dip = overlay_dip != 0 ? overlay_dip : meta.encap_data.overlay_dip;
-        meta.encap_data.overlay_smac = overlay_smac != 0 ? overlay_smac : meta.encap_data.overlay_smac;
-        meta.encap_data.overlay_dmac = overlay_dmac != 0 ? overlay_dmac : meta.encap_data.overlay_dmac;
+        meta.nat.is_ipv6 = is_nat_ip_v6 != 0 ? is_nat_ip_v6 : meta.nat.is_ipv6;
+        meta.nat.nat_sip = nat_sip != 0 ? nat_sip : meta.nat.nat_sip;
+        meta.nat.nat_dip = nat_dip != 0 ? nat_dip : meta.nat.nat_dip;
+        meta.nat.nat_smac = nat_smac != 0 ? nat_smac : meta.nat.nat_smac;
+        meta.nat.nat_dmac = nat_dmac != 0 ? nat_dmac : meta.nat.nat_dmac;
 
-        meta.encap_data.encap_type = encap_type != 0 ? encap_type : meta.encap_data.encap_type;
-        meta.encap_data.vni = encap_vni != 0 ? encap_vni : meta.encap_data.vni;
+        meta.tunnel_0.tunnel_type = tunnel_type != 0 ? tunnel_type : meta.tunnel_0.tunnel_type;
+        meta.tunnel_0.tunnel_vni = encap_vni != 0 ? encap_vni : meta.tunnel_0.tunnel_vni;
 
-        meta.encap_data.underlay_sip = underlay_sip != 0 ? underlay_sip : meta.encap_data.underlay_sip;
-        meta.encap_data.underlay_dip = underlay_dip != 0 ? underlay_dip : meta.encap_data.underlay_dip;
-        meta.encap_data.underlay_smac = underlay_smac != 0 ? underlay_smac : meta.encap_data.underlay_smac;
-        meta.encap_data.underlay_dmac = underlay_dmac != 0 ? underlay_dmac : meta.encap_data.underlay_dmac;
+        meta.tunnel_0.tunnel_sip = tunnel_sip != 0 ? tunnel_sip : meta.tunnel_0.tunnel_sip;
+        meta.tunnel_0.tunnel_dip = tunnel_dip != 0 ? tunnel_dip : meta.tunnel_0.tunnel_dip;
+        meta.tunnel_0.tunnel_smac = tunnel_smac != 0 ? tunnel_smac : meta.tunnel_0.tunnel_smac;
+        meta.tunnel_0.tunnel_dmac = tunnel_dmac != 0 ? tunnel_dmac : meta.tunnel_0.tunnel_dmac;
     }
 
     @name("outbound_routing|dash_outbound_routing0")

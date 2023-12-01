@@ -9,7 +9,7 @@
 control action_staticencap(inout headers_t hdr, inout metadata_t meta)
 {
     action drop() {
-        meta.dropped = true;
+        meta.pkt_meta.dropped = true;
     }
 
     apply {
@@ -38,7 +38,7 @@ control action_staticencap(inout headers_t hdr, inout metadata_t meta)
 control action_tunnel(inout headers_t hdr, inout metadata_t meta)
 {
     action drop() {
-        meta.dropped = true;
+        meta.pkt_meta.dropped = true;
     }
 
     action set_tunnel_underlay0(IPv4Address     underlay_sip,
@@ -199,7 +199,7 @@ control action_nat(inout headers_t hdr, inout metadata_t meta)
     apply {
         do_nat(meta.encap_data.overlay_sip,
                meta.encap_data.overlay_dip,
-               meta.encap_data.is_overlay_ip_v6,
+               meta.encap_data.is_ipv6,
                meta.encap_data.nat_sport,
                meta.encap_data.nat_dport,
                meta.encap_data.nat_sport_base,

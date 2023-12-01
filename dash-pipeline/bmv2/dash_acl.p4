@@ -38,11 +38,11 @@ match_kind {
         key = { \
             meta. ## table_name ##_dash_acl_group_id : exact @name("meta.dash_acl_group_id:dash_acl_group_id") \
             @Sai[type="sai_object_id_t", isresourcetype="true", objects="SAI_OBJECT_TYPE_DASH_ACL_GROUP"]; \
-            meta.dst_ip_addr : LIST_MATCH @name("meta.dst_ip_addr:dip"); \
-            meta.src_ip_addr : LIST_MATCH @name("meta.src_ip_addr:sip"); \
-            meta.ip_protocol : LIST_MATCH @name("meta.ip_protocol:protocol"); \
-            meta.src_l4_port : RANGE_LIST_MATCH @name("meta.src_l4_port:src_port"); \
-            meta.dst_l4_port : RANGE_LIST_MATCH @name("meta.dst_l4_port:dst_port"); \
+            meta.flow.dip : LIST_MATCH @name("meta.flow.dip:dip"); \
+            meta.flow.sip : LIST_MATCH @name("meta.flow.sip:sip"); \
+            meta.flow.proto : LIST_MATCH @name("meta.flow.proto:protocol"); \
+            meta.flow.sport : RANGE_LIST_MATCH @name("meta.flow.sport:src_port"); \
+            meta.flow.dport : RANGE_LIST_MATCH @name("meta.flow.dport:dst_port"); \
         } \
         actions = { \
             permit; \
@@ -74,11 +74,11 @@ match_kind {
     table table_name { \
         key = { \
             meta. ## table_name ##_dash_acl_group_id : exact @name("meta.dash_acl_group_id:dash_acl_group_id"); \
-            meta.dst_ip_addr : LIST_MATCH @name("meta.dst_ip_addr:dip"); \
-            meta.src_ip_addr : LIST_MATCH @name("meta.src_ip_addr:sip"); \
-            meta.ip_protocol : LIST_MATCH @name("meta.ip_protocol:protocol"); \
-            meta.src_l4_port : RANGE_LIST_MATCH @name("meta.src_l4_port:src_port"); \
-            meta.dst_l4_port : RANGE_LIST_MATCH @name("meta.dst_l4_port:dst_port"); \
+            meta.flow.dip : LIST_MATCH @name("meta.flow.dip:dip"); \
+            meta.flow.sip : LIST_MATCH @name("meta.flow.sip:sip"); \
+            meta.flow.proto : LIST_MATCH @name("meta.flow.proto:protocol"); \
+            meta.flow.sport : RANGE_LIST_MATCH @name("meta.flow.sport:src_port"); \
+            meta.flow.dport : RANGE_LIST_MATCH @name("meta.flow.dport:dst_port"); \
         } \
         actions = { \
             permit; \
@@ -108,8 +108,8 @@ control acl(inout headers_t hdr,
 {
     action permit() {}
     action permit_and_continue() {}
-    action deny() {meta.dropped = true;}
-    action deny_and_continue() {meta.dropped = true;}
+    action deny() {meta.pkt_meta.dropped = true;}
+    action deny_and_continue() {meta.pkt_meta.dropped = true;}
 
 ACL_STAGE(stage1)
 ACL_STAGE(stage2)

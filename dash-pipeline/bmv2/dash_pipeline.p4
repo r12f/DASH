@@ -33,7 +33,7 @@ control dash_ingress(
     }
 
     action deny() {
-        meta.dropped = true;
+        meta.pkt_meta.dropped = true;
     }
 
     action accept() {
@@ -54,11 +54,11 @@ control dash_ingress(
     }
 
     action set_outbound_direction() {
-        meta.direction = dash_direction_t.OUTBOUND;
+        meta.pkt_meta.direction = dash_direction_t.OUTBOUND;
     }
 
     action set_inbound_direction() {
-        meta.direction = dash_direction_t.INBOUND;
+        meta.pkt_meta.direction = dash_direction_t.INBOUND;
     }
 
     @name("direction_lookup|dash_direction_lookup")
@@ -136,15 +136,15 @@ control dash_ingress(
         meta.encap_data.vni           = vm_vni;
         meta.vnet_id                  = vnet_id;
 
-        if (meta.is_overlay_ip_v6 == 1) {
-            if (meta.direction == dash_direction_t.OUTBOUND) {
+        if (meta.flow.is_ipv6 == 1) {
+            if (meta.pkt_meta.direction == dash_direction_t.OUTBOUND) {
                 ACL_GROUPS_COPY_TO_META(outbound_v6);
             } else {
                 ACL_GROUPS_COPY_TO_META(inbound_v6);
             }
             meta.meter_policy_id = v6_meter_policy_id;
         } else {
-            if (meta.direction == dash_direction_t.OUTBOUND) {
+            if (meta.pkt_meta.direction == dash_direction_t.OUTBOUND) {
                 ACL_GROUPS_COPY_TO_META(outbound_v4);
             } else {
                 ACL_GROUPS_COPY_TO_META(inbound_v4);
@@ -188,8 +188,8 @@ control dash_ingress(
     table eni_meter {
         key = {
             meta.eni_id : exact @name("meta.eni_id:eni_id");
-            meta.direction : exact @name("meta.direction:direction");
-            meta.dropped : exact @name("meta.dropped:dropped");
+            meta.pkt_meta.direction : exact @name("meta.pkt_meta.direction:direction");
+            meta.pkt_meta.dropped : exact @name("meta.pkt_meta.dropped:dropped");
         }
 
         actions = { NoAction; }
@@ -244,12 +244,12 @@ control dash_ingress(
 
     action check_ip_addr_family(@Sai[type="sai_ip_addr_family_t", isresourcetype="true"] bit<32> ip_addr_family) {
         if (ip_addr_family == 0) /* SAI_IP_ADDR_FAMILY_IPV4 */ {
-            if (meta.is_overlay_ip_v6 == 1) {
-                meta.dropped = true;
+            if (meta.flow.is_ipv6 == 1) {
+                meta.pkt_meta.dropped = true;
             }
         } else {
-            if (meta.is_overlay_ip_v6 == 0) {
-                meta.dropped = true;
+            if (meta.flow.is_ipv6 == 0) {
+                meta.pkt_meta.dropped = true;
             }
         }
     }
@@ -331,12 +331,12 @@ control dash_ingress(
 
     action set_acl_group_attrs(@Sai[type="sai_ip_addr_family_t", isresourcetype="true"] bit<32> ip_addr_family) {
         if (ip_addr_family == 0) /* SAI_IP_ADDR_FAMILY_IPV4 */ {
-            if (meta.is_overlay_ip_v6 == 1) {
-                meta.dropped = true;
+            if (meta.flow.is_ipv6 == 1) {
+                meta.pkt_meta.dropped = true;
             }
         } else {
-            if (meta.is_overlay_ip_v6 == 0) {
-                meta.dropped = true;
+            if (meta.flow.is_ipv6 == 0) {
+                meta.pkt_meta.dropped = true;
             }
         }
     }
@@ -381,14 +381,14 @@ control dash_ingress(
         /* Outer header processing */
 
         /* Put VM's MAC in the direction agnostic metadata field */
-        meta.eni_addr = meta.direction == dash_direction_t.OUTBOUND  ?
+        meta.eni_addr = meta.pkt_meta.direction == dash_direction_t.OUTBOUND  ?
                                           hdr.ethernet.src_addr :
                                           hdr.ethernet.dst_addr;
 
         eni_ether_address_map.apply();
-        if (meta.direction == dash_direction_t.OUTBOUND) {
+        if (meta.pkt_meta.direction == dash_direction_t.OUTBOUND) {
             vxlan_decap(hdr);
-        } else if (meta.direction == dash_direction_t.INBOUND) {
+        } else if (meta.pkt_meta.direction == dash_direction_t.INBOUND) {
             switch (inbound_routing.apply().action_run) {
                 vxlan_decap_pa_validate: {
                     pa_validation.apply();
@@ -399,27 +399,27 @@ control dash_ingress(
 
         /* At this point the processing is done on customer headers */
 
-        meta.is_overlay_ip_v6 = 0;
-        meta.ip_protocol = 0;
-        meta.dst_ip_addr = 0;
-        meta.src_ip_addr = 0;
+        meta.flow.is_ipv6 = 0;
+        meta.flow.proto = 0;
+        meta.flow.dip = 0;
+        meta.flow.sip = 0;
         if (hdr.ip.ipv6.isValid()) {
-            meta.ip_protocol = hdr.ip.ipv6.next_header;
-            meta.src_ip_addr = hdr.ip.ipv6.src_addr;
-            meta.dst_ip_addr = hdr.ip.ipv6.dst_addr;
-            meta.is_overlay_ip_v6 = 1;
+            meta.flow.proto = hdr.ip.ipv6.next_header;
+            meta.flow.sip = hdr.ip.ipv6.src_addr;
+            meta.flow.dip = hdr.ip.ipv6.dst_addr;
+            meta.flow.is_ipv6 = 1;
         } else if (hdr.ip.ipv4.isValid()) {
-            meta.ip_protocol = hdr.ip.ipv4.protocol;
-            meta.src_ip_addr = (bit<128>)hdr.ip.ipv4.src_addr;
-            meta.dst_ip_addr = (bit<128>)hdr.ip.ipv4.dst_addr;
+            meta.flow.proto = hdr.ip.ipv4.protocol;
+            meta.flow.sip = (bit<128>)hdr.ip.ipv4.src_addr;
+            meta.flow.dip = (bit<128>)hdr.ip.ipv4.dst_addr;
         }
 
         if (hdr.tcp.isValid()) {
-            meta.src_l4_port = hdr.tcp.src_port;
-            meta.dst_l4_port = hdr.tcp.dst_port;
+            meta.flow.sport = hdr.tcp.src_port;
+            meta.flow.dport = hdr.tcp.dst_port;
         } else if (hdr.udp.isValid()) {
-            meta.src_l4_port = hdr.udp.src_port;
-            meta.dst_l4_port = hdr.udp.dst_port;
+            meta.flow.sport = hdr.udp.src_port;
+            meta.flow.dport = hdr.udp.dst_port;
         }
 
         eni.apply();
@@ -429,14 +429,14 @@ control dash_ingress(
         acl_group.apply();
 
 
-        if (meta.direction == dash_direction_t.OUTBOUND) {
+        if (meta.pkt_meta.direction == dash_direction_t.OUTBOUND) {
             outbound.apply(hdr, meta);
-        } else if (meta.direction == dash_direction_t.INBOUND) {
+        } else if (meta.pkt_meta.direction == dash_direction_t.INBOUND) {
             inbound.apply(hdr, meta);
         }
 
         /* Underlay routing */
-        meta.dst_ip_addr = (bit<128>)hdr.ip_0.ipv4.dst_addr;
+        meta.flow.dip = (bit<128>)hdr.ip_0.ipv4.dst_addr;
         underlay.apply(
               hdr
             , meta
@@ -465,11 +465,11 @@ control dash_ingress(
         }
 
         meter_bucket.apply();
-        if (meta.direction == dash_direction_t.OUTBOUND) {
+        if (meta.pkt_meta.direction == dash_direction_t.OUTBOUND) {
 #ifdef TARGET_BMV2_V1MODEL
             meter_bucket_outbound.count(meta.meter_bucket_index);
 #endif
-        } else if (meta.direction == dash_direction_t.INBOUND) {
+        } else if (meta.pkt_meta.direction == dash_direction_t.INBOUND) {
 #ifdef TARGET_BMV2_V1MODEL
             meter_bucket_inbound.count(meta.meter_bucket_index);
 #endif
@@ -477,7 +477,7 @@ control dash_ingress(
 
         eni_meter.apply();
 
-        if (meta.dropped) {
+        if (meta.pkt_meta.dropped) {
             drop_action();
         }
     }

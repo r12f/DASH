@@ -55,7 +55,7 @@ control ConntrackIn(inout headers_t hdr,
   action conntrackIn_miss() {
           // TODO: Should this be ((hdr.tcp.flags & 0x2) != 0) instead?
           if (hdr.tcp.flags == 0x2 /* SYN */) {
-            if (meta.direction == dash_direction_t.OUTBOUND) {
+            if (meta.pkt_meta.direction == dash_direction_t.OUTBOUND) {
                // New PNA Extern
                add_entry("conntrackIn_allow",
                          {meta.encap_data.original_overlay_sip, meta.encap_data.original_overlay_dip},
@@ -67,14 +67,14 @@ control ConntrackIn(inout headers_t hdr,
 
   table conntrackIn {
       key = {
-          directionNeutralAddr(meta.direction, hdr.ipv4.src_addr, hdr.ipv4.dst_addr):
+          directionNeutralAddr(meta.pkt_meta.direction, hdr.ipv4.src_addr, hdr.ipv4.dst_addr):
               exact @name("ipv4_addr1");
-          directionNeutralAddr(meta.direction, hdr.ipv4.dst_addr, hdr.ipv4.src_addr):
+          directionNeutralAddr(meta.pkt_meta.direction, hdr.ipv4.dst_addr, hdr.ipv4.src_addr):
               exact @name("ipv4_addr2");
           hdr.ipv4.protocol : exact;
-          directionNeutralPort(meta.direction, hdr.tcp.src_port, hdr.tcp.dst_port):
+          directionNeutralPort(meta.pkt_meta.direction, hdr.tcp.src_port, hdr.tcp.dst_port):
               exact @name("tcp_port1");
-          directionNeutralPort(meta.direction, hdr.tcp.dst_port, hdr.tcp.src_port):
+          directionNeutralPort(meta.pkt_meta.direction, hdr.tcp.dst_port, hdr.tcp.src_port):
               exact @name("tcp_port2");
           meta.eni_id : exact;
       }
@@ -110,7 +110,7 @@ control ConntrackOut(inout headers_t hdr,
   action conntrackOut_miss() {
           // TODO: Should this be ((hdr.tcp.flags & 0x2) != 0) instead?
           if (hdr.tcp.flags == 0x2 /* SYN */) {
-            if (meta.direction == dash_direction_t.INBOUND) {
+            if (meta.pkt_meta.direction == dash_direction_t.INBOUND) {
                // New PNA Extern
                add_entry("conntrackOut_allow", {}, EXPIRE_TIME_PROFILE_LONG);
                //adding failure to be eventually handled
@@ -120,14 +120,14 @@ control ConntrackOut(inout headers_t hdr,
 
   table conntrackOut {
       key = {
-          directionNeutralAddr(meta.direction, hdr.ipv4.src_addr, hdr.ipv4.dst_addr):
+          directionNeutralAddr(meta.pkt_meta.direction, hdr.ipv4.src_addr, hdr.ipv4.dst_addr):
               exact @name("ipv4_addr1");
-          directionNeutralAddr(meta.direction, hdr.ipv4.dst_addr, hdr.ipv4.src_addr):
+          directionNeutralAddr(meta.pkt_meta.direction, hdr.ipv4.dst_addr, hdr.ipv4.src_addr):
               exact @name("ipv4_addr2");
           hdr.ipv4.protocol : exact;
-          directionNeutralPort(meta.direction, hdr.tcp.src_port, hdr.tcp.dst_port):
+          directionNeutralPort(meta.pkt_meta.direction, hdr.tcp.src_port, hdr.tcp.dst_port):
               exact @name("tcp_port1");
-          directionNeutralPort(meta.direction, hdr.tcp.dst_port, hdr.tcp.src_port):
+          directionNeutralPort(meta.pkt_meta.direction, hdr.tcp.dst_port, hdr.tcp.src_port):
               exact @name("tcp_port2");
           meta.eni_id : exact;
       }
@@ -163,7 +163,7 @@ state_graph ConnGraphOut(inout state_context flow_ctx,
             return;
         }
 
-        if (meta.direction == dash_direction_t.INBOUND) {
+        if (meta.pkt_meta.direction == dash_direction_t.INBOUND) {
             transition ALLOW;
         }
     }
@@ -189,7 +189,7 @@ state_graph ConnGraphIn(inout state_context flow_ctx,
             return;
         }
 
-        if (meta.direction == dash_direction_t.OUTBOUND) {
+        if (meta.pkt_meta.direction == dash_direction_t.OUTBOUND) {
             transition ALLOW;
         }
     }

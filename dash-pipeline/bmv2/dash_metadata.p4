@@ -11,7 +11,7 @@ struct encap_data_t {
     EthernetAddress underlay_smac;
     EthernetAddress underlay_dmac;
 
-    bit<1> is_overlay_ip_v6;
+    bit<1> is_ipv6;
     IPv4ORv6Address overlay_sip;
     IPv4ORv6Address overlay_dip;
     EthernetAddress overlay_smac;
@@ -79,9 +79,30 @@ typedef bit<8> dash_tunnel_target_t;
 
 typedef bit<16> dash_tunnel_id_t;
 
-struct metadata_t {
+struct pkt_metadata_t {
     bool dropped;
     dash_direction_t direction;
+    bool use_src;
+    bit<1> lookup_addr_is_v6;
+    IPv4ORv6Address lookup_addr;
+}
+
+struct dash_flow_t {
+    // flow keys
+    bit<8> proto;
+    bit<1> is_ipv6;
+    IPv4ORv6Address sip;
+    IPv4ORv6Address dip;
+    bit<16> sport;
+    bit<16> dport;
+
+    // flow states
+}
+
+struct metadata_t {
+    pkt_metadata_t pkt_meta;
+    dash_flow_t flow;
+
     dash_routing_type_t routing_type;
     encap_data_t encap_data;
     EthernetAddress eni_addr;
@@ -91,16 +112,7 @@ struct metadata_t {
     eni_data_t eni_data;
     bit<16> inbound_vm_id;
     bit<8> appliance_id;
-    bit<1> is_overlay_ip_v6;
-    bit<8> ip_protocol;
-    IPv4ORv6Address dst_ip_addr;
-    IPv4ORv6Address src_ip_addr;
-    bit<1> lookup_addr_is_v6;
-    IPv4ORv6Address lookup_addr;
-    bool use_src;
     conntrack_data_t conntrack_data;
-    bit<16> src_l4_port;
-    bit<16> dst_l4_port;
     bit<16> stage1_dash_acl_group_id;
     bit<16> stage2_dash_acl_group_id;
     bit<16> stage3_dash_acl_group_id;

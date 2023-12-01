@@ -12,7 +12,7 @@ control outbound(inout headers_t hdr,
                  inout metadata_t meta)
 {
     action drop() {
-        meta.dropped = true;
+        meta.pkt_meta.dropped = true;
     }
 
     action outbound_metadata_publish(dash_match_stage_t next_stage,
@@ -61,8 +61,8 @@ control outbound(inout headers_t hdr,
         meta.tcpportmap_oid = tcpportmap_oid != 0 ? tcpportmap_oid : meta.tcpportmap_oid;
         meta.udpportmap_oid = udpportmap_oid != 0 ? udpportmap_oid : meta.udpportmap_oid;
 
-        meta.lookup_addr = lookup_addr != 0 ? lookup_addr : meta.lookup_addr;
-        meta.lookup_addr_is_v6 = lookup_addr_is_v6 != 0 ? lookup_addr_is_v6 : meta.lookup_addr_is_v6;
+        meta.pkt_meta.lookup_addr = lookup_addr != 0 ? lookup_addr : meta.pkt_meta.lookup_addr;
+        meta.pkt_meta.lookup_addr_is_v6 = lookup_addr_is_v6 != 0 ? lookup_addr_is_v6 : meta.pkt_meta.lookup_addr_is_v6;
 
         meta.tunnel_source = tunnel_source != 0 ? tunnel_source : meta.tunnel_source;
         meta.tunnel_target = tunnel_target != 0 ? tunnel_target : meta.tunnel_target;
@@ -84,7 +84,7 @@ control outbound(inout headers_t hdr,
         meta.encap_data.nat_sport_base = nat_sport_base != 0 ? nat_sport_base : meta.encap_data.nat_sport_base;
         meta.encap_data.nat_dport_base = nat_dport_base != 0 ? nat_dport_base : meta.encap_data.nat_dport_base;
 
-        meta.encap_data.is_overlay_ip_v6 = is_overlay_ip_v6 != 0 ? is_overlay_ip_v6 : meta.encap_data.is_overlay_ip_v6;
+        meta.encap_data.is_ipv6 = is_overlay_ip_v6 != 0 ? is_overlay_ip_v6 : meta.encap_data.is_ipv6;
         meta.encap_data.overlay_sip = overlay_sip != 0 ? overlay_sip : meta.encap_data.overlay_sip;
         meta.encap_data.overlay_dip = overlay_dip != 0 ? overlay_dip : meta.encap_data.overlay_dip;
         meta.encap_data.overlay_smac = overlay_smac != 0 ? overlay_smac : meta.encap_data.overlay_smac;
@@ -103,8 +103,8 @@ control outbound(inout headers_t hdr,
     table routing0 {
         key = {
             meta.pipeline_oid : exact @name("meta.pipeline_oid:pipeline_oid");
-            meta.lookup_addr_is_v6 : exact @name("meta.lookup_addr_is_v6:lookup_addr_is_v6");
-            meta.lookup_addr : lpm @name("meta.lookup_addr:lookup_addr");
+            meta.pkt_meta.lookup_addr_is_v6 : exact @name("meta.pkt_meta.lookup_addr_is_v6.pkt_meta.lookup_addr_is_v6");
+            meta.pkt_meta.lookup_addr : lpm @name("meta.pkt_meta.lookup_addr.pkt_meta.lookup_addr");
         }
 
         actions = {
@@ -118,8 +118,8 @@ control outbound(inout headers_t hdr,
     table routing1 {
         key = {
             meta.pipeline_oid : exact @name("meta.pipeline_oid:pipeline_oid");
-            meta.lookup_addr_is_v6 : exact @name("meta.lookup_addr_is_v6:lookup_addr_is_v6");
-            meta.lookup_addr : lpm @name("meta.lookup_addr:lookup_addr");
+            meta.pkt_meta.lookup_addr_is_v6 : exact @name("meta.pkt_meta.lookup_addr_is_v6.pkt_meta.lookup_addr_is_v6");
+            meta.pkt_meta.lookup_addr : lpm @name("meta.pkt_meta.lookup_addr.pkt_meta.lookup_addr");
         }
 
         actions = {
@@ -133,8 +133,8 @@ control outbound(inout headers_t hdr,
     table ipmapping0 {
         key = {
             meta.mapping_oid : exact @name("meta.mapping_oid:mapping_oid");
-            meta.lookup_addr_is_v6 : exact @name("meta.lookup_addr_is_v6:lookup_addr_is_v6");
-            meta.lookup_addr : exact @name("meta.lookup_addr:lookup_addr");
+            meta.pkt_meta.lookup_addr_is_v6 : exact @name("meta.pkt_meta.lookup_addr_is_v6.pkt_meta.lookup_addr_is_v6");
+            meta.pkt_meta.lookup_addr : exact @name("meta.pkt_meta.lookup_addr.pkt_meta.lookup_addr");
         }
 
         actions = {
@@ -148,8 +148,8 @@ control outbound(inout headers_t hdr,
     table ipmapping1 {
         key = {
             meta.mapping_oid : exact @name("meta.mapping_oid:mapping_oid");
-            meta.lookup_addr_is_v6 : exact @name("meta.lookup_addr_is_v6:lookup_addr_is_v6");
-            meta.lookup_addr : exact @name("meta.lookup_addr:lookup_addr");
+            meta.pkt_meta.lookup_addr_is_v6 : exact @name("meta.pkt_meta.lookup_addr_is_v6.pkt_meta.lookup_addr_is_v6");
+            meta.pkt_meta.lookup_addr : exact @name("meta.pkt_meta.lookup_addr.pkt_meta.lookup_addr");
         }
 
         actions = {
@@ -163,8 +163,8 @@ control outbound(inout headers_t hdr,
     table tcpportmapping {
         key = {
             meta.tcpportmap_oid : exact @name("meta.tcpportmap_oid:tcpportmap_oid");
-            meta.src_l4_port : range @name("meta.src_l4_port:src_l4_port");
-            meta.dst_l4_port : range @name("meta.dst_l4_port:dst_l4_port");
+            meta.flow.sport : range @name("meta.flow.sport.flow.sport");
+            meta.flow.dport : range @name("meta.flow.dport.flow.dport");
         }
 
         actions = {
@@ -178,8 +178,8 @@ control outbound(inout headers_t hdr,
     table udpportmapping {
         key = {
             meta.udpportmap_oid : exact @name("meta.udpportmap_oid:udpportmap_oid");
-            meta.src_l4_port : range @name("meta.src_l4_port:src_l4_port");
-            meta.dst_l4_port : range @name("meta.dst_l4_port:dst_l4_port");
+            meta.flow.sport : range @name("meta.flow.sport.flow.sport");
+            meta.flow.dport : range @name("meta.flow.dport.flow.dport");
         }
 
         actions = {
@@ -214,12 +214,12 @@ control outbound(inout headers_t hdr,
         meta.transit_to = dash_match_stage_t.MATCH_START;
         //TODO: temporary, should be generic per object model
         meta.pipeline_oid = (dash_oid_t)meta.eni_id;
-        meta.use_src = false;
-        meta.lookup_addr_is_v6 = meta.is_overlay_ip_v6;
-        if (meta.use_src) {
-            meta.lookup_addr = meta.src_ip_addr;
+        meta.pkt_meta.use_src = false;
+        meta.pkt_meta.lookup_addr_is_v6 = meta.flow.is_ipv6;
+        if (meta.pkt_meta.use_src) {
+            meta.pkt_meta.lookup_addr = meta.flow.sip;
         } else {
-            meta.lookup_addr = meta.dst_ip_addr;
+            meta.pkt_meta.lookup_addr = meta.flow.dip;
         }
 
 #define DO_MATCH_ROUTING(n) \

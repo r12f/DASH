@@ -103,15 +103,15 @@ control dash_ingress(
                          ACL_GROUPS_PARAM(inbound_v6),
                          ACL_GROUPS_PARAM(outbound_v4),
                          ACL_GROUPS_PARAM(outbound_v6)) {
-        meta.eni_data.cps             = cps;
-        meta.eni_data.pps             = pps;
-        meta.eni_data.flows           = flows;
-        meta.eni_data.admin_state     = admin_state;
+        meta.eni.cps             = cps;
+        meta.eni.pps             = pps;
+        meta.eni.flows           = flows;
+        meta.eni.admin_state     = admin_state;
         meta.tunnel_0.tunnel_dip  = vm_underlay_dip;
         /* vm_vni is the encap VNI used for tunnel between inbound DPU -> VM
          * and not a VNET identifier */
         meta.tunnel_0.tunnel_vni           = vm_vni;
-        meta.vnet_id                  = vnet_id;
+        meta.eni.vnet_id                  = vnet_id;
 
         if (meta.flow.is_ipv6 == 1) {
             if (meta.pkt_meta.direction == dash_direction_t.OUTBOUND) {
@@ -130,10 +130,10 @@ control dash_ingress(
         }
     }
 
-    @name("eni|dash_eni")
-    table eni {
+    @name("pipeline|dash_pipeline")
+    table pipeline {
         key = {
-            meta.eni_id : exact @name("meta.eni_id:eni_id");
+            meta.pipeline_oid : exact @name("meta.pipeline_oid:pipeline_oid");
         }
 
         actions = {
@@ -164,7 +164,7 @@ control dash_ingress(
 
     table eni_meter {
         key = {
-            meta.eni_id : exact @name("meta.eni_id:eni_id");
+            meta.pipeline_oid : exact @name("meta.pipeline_oid:pipeline_oid");
             meta.pkt_meta.direction : exact @name("meta.pkt_meta.direction:direction");
             meta.pkt_meta.dropped : exact @name("meta.pkt_meta.dropped:dropped");
         }
@@ -185,13 +185,13 @@ control dash_ingress(
     }
 
     action vxlan_decap_pa_validate(bit<16> src_vnet_id) {
-        meta.vnet_id = src_vnet_id;
+        meta.eni.vnet_id = src_vnet_id;
     }
 
     @name("pa_validation|dash_pa_validation")
     table pa_validation {
         key = {
-            meta.vnet_id: exact @name("meta.vnet_id:vnet_id");
+            meta.eni.vnet_id: exact @name("meta.eni.vnet_id:vnet_id");
             hdr.ip_0.ipv4.src_addr : exact @name("hdr.ip_0.ipv4.src_addr:sip");
         }
 
@@ -206,7 +206,7 @@ control dash_ingress(
     @name("inbound_routing|dash_inbound_routing")
     table inbound_routing {
         key = {
-            meta.eni_id: exact @name("meta.eni_id:eni_id");
+            meta.pipeline_oid: exact @name("meta.pipeline_oid:pipeline_oid");
             hdr.encap_0.vxlan.vni : exact @name("hdr.encap_0.vxlan.vni:VNI");
             hdr.ip_0.ipv4.src_addr : ternary @name("hdr.ip_0.ipv4.src_addr:sip");
         }
@@ -279,7 +279,7 @@ control dash_ingress(
     @Sai[isobject="true"]
     table meter_bucket {
         key = {
-            meta.eni_id: exact @name("meta.eni_id:eni_id");
+            meta.pipeline_oid: exact @name("meta.pipeline_oid:pipeline_oid");
             meta.meter_class: exact @name("meta.meter_class:meter_class");
         }
         actions = {
@@ -289,18 +289,18 @@ control dash_ingress(
         const default_action = NoAction();
     }
 
-    action set_eni(bit<16> eni_id) {
-        meta.eni_id = eni_id;
+    action set_pipeline(dash_oid_t pipeline_oid) {
+        meta.pipeline_oid = pipeline_oid;
     }
 
-    @name("eni_ether_address_map|dash_eni")
-    table eni_ether_address_map {
+    @name("pipeline_lookup|dash_pipeline_lookup")
+    table pipeline_lookup {
         key = {
-            meta.eni_addr : exact @name("meta.eni_addr:address");
+            meta.pkt_meta.lookup_l2_addr : ternary @name("meta.pkt_meta.lookup_l2_addr:address");
         }
 
         actions = {
-            set_eni;
+            set_pipeline;
             @defaultonly deny;
         }
         const default_action = deny;
@@ -357,11 +357,10 @@ control dash_ingress(
         /* Outer header processing */
 
         /* Put VM's MAC in the direction agnostic metadata field */
-        meta.eni_addr = meta.pkt_meta.direction == dash_direction_t.OUTBOUND  ?
-                                          hdr.ethernet.src_addr :
-                                          hdr.ethernet.dst_addr;
+        meta.pkt_meta.lookup_l2_addr = meta.pkt_meta.direction == dash_direction_t.OUTBOUND  ?
+                                       hdr.ethernet.src_addr : hdr.ethernet.dst_addr;
 
-        eni_ether_address_map.apply();
+        pipeline_lookup.apply();
         if (meta.pkt_meta.direction == dash_direction_t.OUTBOUND) {
             vxlan_decap(hdr);
         } else if (meta.pkt_meta.direction == dash_direction_t.INBOUND) {
@@ -398,8 +397,8 @@ control dash_ingress(
             meta.flow.dport = hdr.udp.dst_port;
         }
 
-        eni.apply();
-        if (meta.eni_data.admin_state == 0) {
+        pipeline.apply();
+        if (meta.eni.admin_state == 0) {
             deny();
         }
         acl_group.apply();

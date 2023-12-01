@@ -211,7 +211,6 @@ control outbound(inout headers_t hdr,
 
         meta.transit_to = dash_match_stage_t.MATCH_START;
         //TODO: temporary, should be generic per object model
-        meta.pipeline_oid = (dash_oid_t)meta.eni_id;
         meta.pkt_meta.use_src = false;
         meta.pkt_meta.lookup_addr_is_v6 = meta.flow.is_ipv6;
         if (meta.pkt_meta.use_src) {

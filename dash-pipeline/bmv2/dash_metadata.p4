@@ -25,11 +25,12 @@ struct conntrack_data_t {
     IPv4Address original_overlay_dip;
 }
 
-struct eni_data_t {
+struct dash_eni_t {
     bit<32> cps;
     bit<32> pps;
     bit<32> flows;
     bit<1>  admin_state;
+    bit<16> vnet_id;
 }
 
 typedef bit<32> dash_routing_type_t;
@@ -68,6 +69,7 @@ struct pkt_metadata_t {
     bool use_src;
     bit<1> lookup_addr_is_v6;
     IPv4ORv6Address lookup_addr;
+    EthernetAddress lookup_l2_addr;
 }
 
 struct dash_flow_t {
@@ -101,11 +103,7 @@ struct metadata_t {
     dash_tunnel_t tunnel_0;
     dash_tunnel_t tunnel_1;
 
-    EthernetAddress eni_addr;
-    bit<16> vnet_id;
-    bit<16> dst_vnet_id;
-    bit<16> eni_id;
-    eni_data_t eni_data;
+    dash_eni_t eni;
 
     conntrack_data_t conntrack_data;
     bit<16> stage1_dash_acl_group_id;

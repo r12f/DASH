@@ -76,7 +76,7 @@ control ConntrackIn(inout headers_t hdr,
               exact @name("tcp_port1");
           directionNeutralPort(meta.pkt_meta.direction, hdr.tcp.dst_port, hdr.tcp.src_port):
               exact @name("tcp_port2");
-          meta.eni_id : exact;
+          meta.pipeline_oid : exact;
       }
       actions = {
           conntrackIn_allow;
@@ -129,7 +129,7 @@ control ConntrackOut(inout headers_t hdr,
               exact @name("tcp_port1");
           directionNeutralPort(meta.pkt_meta.direction, hdr.tcp.dst_port, hdr.tcp.src_port):
               exact @name("tcp_port2");
-          meta.eni_id : exact;
+          meta.pipeline_oid : exact;
       }
       actions = {
           conntrackOut_allow;

@@ -42,7 +42,7 @@ control dash_ingress(
     @name("vip|dash_vip")
     table vip {
         key = {
-            hdr.ip_0.ipv4.dst_addr : exact @name("hdr.ip_0.ipv4.dst_addr:VIP");
+            hdr.ip_0.ipv4.dst_addr : exact @name("hdr.ipv4.dst_addr:VIP");
         }
 
         actions = {
@@ -64,7 +64,7 @@ control dash_ingress(
     @name("direction_lookup|dash_direction_lookup")
     table direction_lookup {
         key = {
-            hdr.encap_0.vxlan.vni : exact @name("hdr.encap_0.vxlan.vni:VNI");
+            hdr.encap_0.vxlan.vni : exact @name("hdr.vxlan.vni:VNI");
         }
 
         actions = {
@@ -192,7 +192,7 @@ control dash_ingress(
     table pa_validation {
         key = {
             meta.eni.vnet_id: exact @name("meta.eni.vnet_id:vnet_id");
-            hdr.ip_0.ipv4.src_addr : exact @name("hdr.ip_0.ipv4.src_addr:sip");
+            hdr.ip_0.ipv4.src_addr : exact @name("hdr.ipv4.src_addr:sip");
         }
 
         actions = {
@@ -207,8 +207,8 @@ control dash_ingress(
     table inbound_routing {
         key = {
             meta.pipeline_oid: exact @name("meta.pipeline_oid:pipeline_oid");
-            hdr.encap_0.vxlan.vni : exact @name("hdr.encap_0.vxlan.vni:VNI");
-            hdr.ip_0.ipv4.src_addr : ternary @name("hdr.ip_0.ipv4.src_addr:sip");
+            hdr.encap_0.vxlan.vni : exact @name("hdr.vxlan.vni:VNI");
+            hdr.ip_0.ipv4.src_addr : ternary @name("hdr.ipv4.src_addr:sip");
         }
         actions = {
             vxlan_decap(hdr);
@@ -251,7 +251,7 @@ control dash_ingress(
     table meter_rule {
         key = {
             meta.meter_policy_id: exact @name("meta.meter_policy_id:meter_policy_id") @Sai[type="sai_object_id_t", isresourcetype="true", objects="METER_POLICY"];
-            hdr.ip_0.ipv4.dst_addr : ternary @name("hdr.ip_0.ipv4.dst_addr:dip");
+            hdr.ip_0.ipv4.dst_addr : ternary @name("hdr.ipv4.dst_addr:dip");
         }
 
      actions = {

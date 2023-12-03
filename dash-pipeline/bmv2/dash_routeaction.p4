@@ -51,6 +51,7 @@ control action_tunnel(inout headers_t hdr, inout metadata_t meta)
         meta.tunnel_0.tunnel_dmac = tunnel_dmac != 0 ? tunnel_dmac : meta.tunnel_0.tunnel_dmac;
     }
 
+    @name("tunnel_underlay0|dash_tunnel_underlay0")
     table tunnel_underlay0 {
         key = {
             meta.tunnel_underlay0_id : exact @name("meta.tunnel_underlay0_id:tunnel_underlay0_id");
@@ -74,6 +75,7 @@ control action_tunnel(inout headers_t hdr, inout metadata_t meta)
         meta.tunnel_0.tunnel_dmac = tunnel_dmac != 0 ? tunnel_dmac : meta.tunnel_0.tunnel_dmac;
     }
 
+    @name("tunnel_underlay1|dash_tunnel_underlay1")
     table tunnel_underlay1 {
         key = {
             meta.tunnel_underlay1_id : exact @name("meta.tunnel_underlay1_id:tunnel_underlay1_id");

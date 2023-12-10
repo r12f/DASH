@@ -168,9 +168,9 @@ class SAITypeSolver:
     def __get_lpm_match_key_sai_type(key_size, key_parent_name, key_name):
         sai_type_name = ""
 
-        if key_size == 32 and ('addr' in key_name or 'ip' in key_parent_name):
+        if key_size == 32 and ('addr' in key_name or 'ip' in key_parent_name or 'flow' == key_header):
             sai_type_name = 'sai_ip_prefix_t'
-        elif key_size == 128 and ('addr' in key_name or 'ip' in key_parent_name):
+        elif key_size == 128 and ('addr' in key_name or 'ip' in key_parent_name or 'flow' == key_header):
             sai_type_name = 'sai_ip_prefix_t'
         else:
             raise ValueError(f'key_size={key_size}, key_header={key_parent_name}, and key_field={key_name} is not supported')

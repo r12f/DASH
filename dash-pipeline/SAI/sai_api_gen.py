@@ -127,9 +127,9 @@ class SAIType:
 
     @staticmethod
     def get_sai_lpm_type(key_size, key_header, key_field):
-        if key_size == 32 and ('addr' in key_field or 'ip' in key_header):
+        if key_size == 32:
             return 'sai_ip_prefix_t', 'ipPrefix'
-        elif key_size == 128 and ('addr' in key_field or 'ip' in key_header):
+        elif key_size == 128:
             return 'sai_ip_prefix_t', 'ipPrefix'
         raise ValueError(f'key_size={key_size}, key_header={key_header}, and key_field={key_field} is not supported')
 

@@ -103,6 +103,8 @@ class SAITypeSolver:
         "sai_u16_list_t": SAITypeInfo("sai_u16_list_t", "u16list"),
         "sai_u32_list_t": SAITypeInfo("sai_u32_list_t", "u32list"),
         "sai_ip_prefix_list_t": SAITypeInfo("sai_ip_prefix_list_t", "ipprefixlist"),
+        "sai_u16_range_t": SAITypeInfo("sai_u16_range_t", "u16range"),
+        "sai_u32_range_t": SAITypeInfo("sai_u32_range_t", "u32range"),
         "sai_u8_range_list_t": SAITypeInfo("sai_u8_range_list_t", "u8rangelist"),
         "sai_u16_range_list_t": SAITypeInfo("sai_u16_range_list_t", "u16rangelist"),
         "sai_u32_range_list_t": SAITypeInfo("sai_u32_range_list_t", "u32rangelist"),
@@ -158,7 +160,7 @@ class SAITypeSolver:
         elif match_type == 'list':
             return SAITypeSolver.__get_list_match_key_sai_type(key_size, key_parent_name, key_name)
         elif match_type == 'range':
-            return SAITypeSolver.__get_range_sai_type(self.bitwidth, key_header, key_field)
+            return SAITypeSolver.__get_range_sai_type(key_size, key_parent_name, key_name)
         elif match_type == 'range_list':
             return SAITypeSolver.__get_range_list_sai_type(key_size, key_parent_name, key_name)
         else:
@@ -168,9 +170,9 @@ class SAITypeSolver:
     def __get_lpm_match_key_sai_type(key_size, key_parent_name, key_name):
         sai_type_name = ""
 
-        if key_size == 32 and ('addr' in key_name or 'ip' in key_parent_name or 'flow' == key_header):
+        if key_size == 32 and ('addr' in key_name or 'ip' in key_parent_name or 'flow' == key_parent_name):
             sai_type_name = 'sai_ip_prefix_t'
-        elif key_size == 128 and ('addr' in key_name or 'ip' in key_parent_name or 'flow' == key_header):
+        elif key_size == 128 and ('addr' in key_name or 'ip' in key_parent_name or 'flow' == key_parent_name):
             sai_type_name = 'sai_ip_prefix_t'
         else:
             raise ValueError(f'key_size={key_size}, key_header={key_parent_name}, and key_field={key_name} is not supported')
@@ -201,15 +203,13 @@ class SAITypeSolver:
         sai_type_name = ""
 
         if key_size > 8 and key_size <= 16:
-            sai_type_name = 'sai_u16_range_t', 'u16range'
+            sai_type_name = 'sai_u16_range_t'
         elif key_size <= 32:
-            sai_type_name = 'sai_u32_range_t',  'u32range'
-        elif key_size <= 64:
-            sai_type_name = 'sai_u64_range_t',  'u64range'
+            sai_type_name = 'sai_u32_range_t'
         else:
             raise ValueError(f'key_size={key_size} is not supported')
 
-        return sai_type_name
+        return SAITypeSolver.get_sai_type(sai_type_name)
 
     @staticmethod
     def __get_range_list_sai_type(key_size, key_header, key_field):

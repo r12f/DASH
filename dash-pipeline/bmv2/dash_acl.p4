@@ -31,18 +31,18 @@ match_kind {
 #define str(name) #name
 
 #ifdef TARGET_BMV2_V1MODEL
-#define ACL_STAGE(table_name) \
-    direct_counter(CounterType.packets_and_bytes) ## table_name ##_counter; \
-    @name(str(table_name##:dash_acl_rule|dash_acl)) \
-    table table_name { \
+#define ACL_STAGE(stage_index) \
+    direct_counter(CounterType.packets_and_bytes) ## stage ## stage_index ##_counter; \
+    @SaiTable[name="dash_acl_rule", stage=str(acl.stage ## stage_index), api="dash_acl", api_order=1] \
+    table stage ## stage_index { \
         key = { \
-            meta. ## table_name ##_dash_acl_group_id : exact @name("meta.dash_acl_group_id:dash_acl_group_id") \
-            @Sai[type="sai_object_id_t", isresourcetype="true", objects="SAI_OBJECT_TYPE_DASH_ACL_GROUP"]; \
-            meta.flow.dip : LIST_MATCH @name("meta.flow.dip:dip"); \
-            meta.flow.sip : LIST_MATCH @name("meta.flow.sip:sip"); \
-            meta.flow.proto : LIST_MATCH @name("meta.flow.proto:protocol"); \
-            meta.flow.sport : RANGE_LIST_MATCH @name("meta.flow.sport:src_port"); \
-            meta.flow.dport : RANGE_LIST_MATCH @name("meta.flow.dport:dst_port"); \
+            meta.stage ## stage_index ##_dash_acl_group_id : exact \
+            @SaiVal[name = "dash_acl_group_id", type="sai_object_id_t", isresourcetype="true", objects="SAI_OBJECT_TYPE_DASH_ACL_GROUP"]; \
+            meta.flow.dip : LIST_MATCH; \
+            meta.flow.sip : LIST_MATCH; \
+            meta.flow.proto : LIST_MATCH @SaiVal[name = "protocol"]; \
+            meta.flow.sport : RANGE_LIST_MATCH @SaiVal[name = "src_port"]; \
+            meta.flow.dport : RANGE_LIST_MATCH @SaiVal[name = "dst_port"]; \
         } \
         actions = { \
             permit; \
@@ -51,7 +51,7 @@ match_kind {
             deny_and_continue; \
         } \
         default_action = deny; \
-        counters = ## table_name ##_counter; \
+        counters = stage ## stage_index ##_counter; \
     }
 #endif // TARGET_BMV2_V1MODEL
 #ifdef TARGET_DPDK_PNA
@@ -70,15 +70,15 @@ match_kind {
 //        pna_direct_counter = ## table_name ##_counter; \
 
 #define ACL_STAGE(table_name) \
-    @name(str(table_name##:dash_acl_rule|dash_acl)) \
-    table table_name { \
+    @SaiTable[name="dash_acl_rule", stage=str(acl.stage ## stage_index), api="dash_acl"] \
+    table stage ##stage_index { \
         key = { \
-            meta. ## table_name ##_dash_acl_group_id : exact @name("meta.dash_acl_group_id:dash_acl_group_id"); \
-            meta.flow.dip : LIST_MATCH @name("meta.flow.dip:dip"); \
-            meta.flow.sip : LIST_MATCH @name("meta.flow.sip:sip"); \
-            meta.flow.proto : LIST_MATCH @name("meta.flow.proto:protocol"); \
-            meta.flow.sport : RANGE_LIST_MATCH @name("meta.flow.sport:src_port"); \
-            meta.flow.dport : RANGE_LIST_MATCH @name("meta.flow.dport:dst_port"); \
+            meta.stage ## stage_index ##_dash_acl_group_id : exact @SaiVal[name = "dash_acl_group_id"]; \
+            meta.flow.dip : LIST_MATCH; \
+            meta.flow.sip : LIST_MATCH; \
+            meta.flow.proto : LIST_MATCH @SaiVal[name = "protocol"]; \
+            meta.flow.sport : RANGE_LIST_MATCH @SaiVal[name = "src_port"]; \
+            meta.flow.dport : RANGE_LIST_MATCH @SaiVal[name = "dst_port"]; \
         } \
         actions = { \
             permit; \
@@ -90,9 +90,9 @@ match_kind {
     }
 #endif // TARGET_DPDK_PNA
 
-#define ACL_STAGE_APPLY(table_name) \
-        if ( meta. ## table_name ##_dash_acl_group_id  != 0) { \
-        switch (table_name.apply().action_run) { \
+#define ACL_STAGE_APPLY(stage_index) \
+        if ( meta.stage ## stage_index ##_dash_acl_group_id  != 0) { \
+        switch (stage ## stage_index.apply().action_run) { \
             permit: {return;} \
             deny: {return;} \
         } \
@@ -111,14 +111,14 @@ control acl(inout headers_t hdr,
     action deny() {meta.pkt_meta.dropped = true;}
     action deny_and_continue() {meta.pkt_meta.dropped = true;}
 
-ACL_STAGE(stage1)
-ACL_STAGE(stage2)
-ACL_STAGE(stage3)
+ACL_STAGE(1)
+ACL_STAGE(2)
+ACL_STAGE(3)
 
     apply {
-ACL_STAGE_APPLY(stage1)
-ACL_STAGE_APPLY(stage2)
-ACL_STAGE_APPLY(stage3)
+ACL_STAGE_APPLY(1)
+ACL_STAGE_APPLY(2)
+ACL_STAGE_APPLY(3)
     }
 }
 #endif /* _SIRIUS_ACL_P4_ */

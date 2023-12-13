@@ -39,10 +39,10 @@ control dash_ingress(
     action accept() {
     }
 
-    @name("vip|dash_vip")
+    @SaiTable[name = "vip", api = "dash_vip"]
     table vip {
         key = {
-            hdr.ip_0.ipv4.dst_addr : exact @name("hdr.ipv4.dst_addr:VIP");
+            hdr.ip_0.ipv4.dst_addr : exact @SaiVal[name = "VIP"];
         }
 
         actions = {
@@ -61,10 +61,10 @@ control dash_ingress(
         meta.pkt_meta.direction = dash_direction_t.INBOUND;
     }
 
-    @name("direction_lookup|dash_direction_lookup")
+    @SaiTable[name = "direction_lookup", api = "dash_direction_lookup"]
     table direction_lookup {
         key = {
-            hdr.encap_0.vxlan.vni : exact @name("hdr.vxlan.vni:VNI");
+            hdr.encap_0.vxlan.vni : exact @SaiVal[name = "VNI"];
         }
 
         actions = {
@@ -93,12 +93,12 @@ control dash_ingress(
                          bit<32> pps,
                          bit<32> flows,
                          bit<1> admin_state,
-                         IPv4Address vm_underlay_dip,
-                         @Sai[type="sai_uint32_t"]
-                         bit<24> vm_vni,
-                         bit<16> vnet_id,
-                         bit<16> v4_meter_policy_id,
-                         bit<16> v6_meter_policy_id,
+                         @SaiVal[type="sai_ip_address_t"] IPv4Address vm_underlay_dip,
+                         @SaiVal[type="sai_uint32_t"] bit<24> vm_vni,
+                         @SaiVal[type="sai_object_id_t"] bit<16> vnet_id,
+                         @SaiVal[type="sai_ip_address_t"] IPv4Address pl_underlay_sip,
+                         @SaiVal[type="sai_object_id_t"] bit<16> v4_meter_policy_id,
+                         @SaiVal[type="sai_object_id_t"] bit<16> v6_meter_policy_id,
                          ACL_GROUPS_PARAM(inbound_v4),
                          ACL_GROUPS_PARAM(inbound_v6),
                          ACL_GROUPS_PARAM(outbound_v4),
@@ -130,10 +130,10 @@ control dash_ingress(
         }
     }
 
-    @name("pipeline|dash_pipeline")
+    @SaiTable[name = "eni", api = "dash_eni", api_order=1]
     table pipeline {
         key = {
-            meta.pipeline_oid : exact @name("meta.pipeline_oid:pipeline_oid");
+            meta.pipeline_oid : exact @SaiVal[type = "sai_object_id_t"];
         }
 
         actions = {
@@ -162,11 +162,12 @@ control dash_ingress(
 #endif // DPDK_SUPPORTS_DIRECT_COUNTER_ON_WILDCARD_KEY_TABLE
 #endif // TARGET_DPDK_PNA
 
+    @SaiTable[ignored = "true"]
     table eni_meter {
         key = {
-            meta.pipeline_oid : exact @name("meta.pipeline_oid:pipeline_oid");
-            meta.pkt_meta.direction : exact @name("meta.pkt_meta.direction:direction");
-            meta.pkt_meta.dropped : exact @name("meta.pkt_meta.dropped:dropped");
+            meta.pipeline_oid : exact @SaiVal[type = "sai_object_id_t"];
+            meta.pkt_meta.direction : exact;
+            meta.pkt_meta.dropped : exact;
         }
 
         actions = { NoAction; }
@@ -188,11 +189,11 @@ control dash_ingress(
         meta.eni.vnet_id = src_vnet_id;
     }
 
-    @name("pa_validation|dash_pa_validation")
+    @SaiTable[name = "pa_validation", api = "dash_pa_validation"]
     table pa_validation {
         key = {
-            meta.eni.vnet_id: exact @name("meta.eni.vnet_id:vnet_id");
-            hdr.ip_0.ipv4.src_addr : exact @name("hdr.ipv4.src_addr:sip");
+            meta.eni.vnet_id: exact @SaiVal[type = "sai_object_id_t"];
+            hdr.ip_0.ipv4.src_addr : exact @SaiVal[name = "sip"];
         }
 
         actions = {
@@ -203,12 +204,12 @@ control dash_ingress(
         const default_action = deny;
     }
 
-    @name("inbound_routing|dash_inbound_routing")
+    @SaiTable[name = "inbound_routing", api = "dash_inbound_routing"]
     table inbound_routing {
         key = {
-            meta.pipeline_oid: exact @name("meta.pipeline_oid:pipeline_oid");
-            hdr.encap_0.vxlan.vni : exact @name("hdr.vxlan.vni:VNI");
-            hdr.ip_0.ipv4.src_addr : ternary @name("hdr.ipv4.src_addr:sip");
+            meta.pipeline_oid: exact @SaiVal[type = "sai_object_id_t"];
+            hdr.encap_0.vxlan.vni : exact @SaiVal[name = "VNI"];
+            hdr.ip_0.ipv4.src_addr : ternary @SaiVal[name = "sip"];
         }
         actions = {
             vxlan_decap(hdr);
@@ -231,11 +232,10 @@ control dash_ingress(
         }
     }
 
-    @name("meter_policy|dash_meter")
-    @Sai[isobject="true"]
+    @SaiTable[name = "meter_policy", api = "dash_meter", api_order = 1, isobject="true"]
     table meter_policy {
         key = {
-            meta.meter_policy_id : exact @name("meta.meter_policy_id:meter_policy_id");
+            meta.meter_policy_id : exact;
         }
         actions = {
             check_ip_addr_family;
@@ -246,12 +246,11 @@ control dash_ingress(
         meta.policy_meter_class = meter_class;
     }
 
-    @name("meter_rule|dash_meter")
-    @Sai[isobject="true"]
+    @SaiTable[name = "meter_rule", api = "dash_meter", api_order = 2, isobject="true"]
     table meter_rule {
         key = {
-            meta.meter_policy_id: exact @name("meta.meter_policy_id:meter_policy_id") @Sai[type="sai_object_id_t", isresourcetype="true", objects="METER_POLICY"];
-            hdr.ip_0.ipv4.dst_addr : ternary @name("hdr.ipv4.dst_addr:dip");
+            meta.meter_policy_id: exact @SaiVal[type = "sai_object_id_t", isresourcetype = "true", objects = "METER_POLICY"];
+            hdr.ip_0.ipv4.dst_addr : ternary @SaiVal[name = "dip", type = "sai_ip_address_t"];
         }
 
      actions = {
@@ -275,12 +274,11 @@ control dash_ingress(
         meta.meter_bucket_index = meter_bucket_index;
     }
 
-    @name("meter_bucket|dash_meter")
-    @Sai[isobject="true"]
+    @SaiTable[name = "meter_bucket", api = "dash_meter", api_order = 0, isobject="true"]
     table meter_bucket {
         key = {
-            meta.pipeline_oid: exact @name("meta.pipeline_oid:pipeline_oid");
-            meta.meter_class: exact @name("meta.meter_class:meter_class");
+            meta.pipeline_oid: exact @SaiVal[type = "sai_object_id_t"];
+            meta.meter_class: exact;
         }
         actions = {
             meter_bucket_action;
@@ -289,14 +287,14 @@ control dash_ingress(
         const default_action = NoAction();
     }
 
-    action set_pipeline(dash_oid_t pipeline_oid) {
+    action set_pipeline(@SaiVal[type="sai_object_id_t"] dash_oid_t pipeline_oid) {
         meta.pipeline_oid = pipeline_oid;
     }
 
-    @name("pipeline_lookup|dash_pipeline_lookup")
+    @SaiTable[name = "eni_ether_address_map", api = "dash_eni", api_order=0]
     table pipeline_lookup {
         key = {
-            meta.pkt_meta.lookup_l2_addr : ternary @name("meta.pkt_meta.lookup_l2_addr:address");
+            meta.pkt_meta.lookup_l2_addr : exact @SaiVal[name = "address", type = "sai_mac_t"];
         }
 
         actions = {
@@ -318,10 +316,10 @@ control dash_ingress(
         }
     }
 
-    @name("dash_acl_group|dash_acl")
+    @SaiTable[name = "dash_acl_group", api = "dash_acl", api_order = 0]
     table acl_group {
         key = {
-            meta.stage1_dash_acl_group_id : exact @name("meta.stage1_dash_acl_group_id:dash_acl_group_id");
+            meta.stage1_dash_acl_group_id : exact @SaiVal[name = "dash_acl_group_id"];
         }
         actions = {
             set_acl_group_attrs();

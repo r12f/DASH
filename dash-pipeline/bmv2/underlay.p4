@@ -69,7 +69,6 @@ control underlay(
     }
 
     @SaiTable[name = "route", api = "route", api_type="underlay"]
-    // TODO: To add structural annotations (example: @Sai[skipHeaderGen=true])
     table underlay_routing {
         key = {
             meta.flow.dip : lpm @SaiVal[name = "destination"];

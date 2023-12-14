@@ -220,7 +220,7 @@ control dash_ingress(
         const default_action = deny;
     }
 
-    action check_ip_addr_family(@Sai[type="sai_ip_addr_family_t", isresourcetype="true"] bit<32> ip_addr_family) {
+    action check_ip_addr_family(@SaiVal[type="sai_ip_addr_family_t", isresourcetype="true"] bit<32> ip_addr_family) {
         if (ip_addr_family == 0) /* SAI_IP_ADDR_FAMILY_IPV4 */ {
             if (meta.flow.is_ipv6 == 1) {
                 meta.pkt_meta.dropped = true;
@@ -267,9 +267,9 @@ control dash_ingress(
     counter(MAX_METER_BUCKETS, CounterType.bytes) meter_bucket_outbound;
 #endif // TARGET_BMV2_V1MODEL
     action meter_bucket_action(
-            @Sai[type="sai_uint64_t", isreadonly="true"] bit<64> outbound_bytes_counter,
-            @Sai[type="sai_uint64_t", isreadonly="true"] bit<64> inbound_bytes_counter,
-            @Sai[type="sai_uint32_t", skipattr="true"] bit<32> meter_bucket_index) {
+            @SaiVal[type="sai_uint64_t", isreadonly="true"] bit<64> outbound_bytes_counter,
+            @SaiVal[type="sai_uint64_t", isreadonly="true"] bit<64> inbound_bytes_counter,
+            @SaiVal[type="sai_uint32_t", skipattr="true"] bit<32> meter_bucket_index) {
         // read only counters for SAI api generation only
         meta.meter_bucket_index = meter_bucket_index;
     }
@@ -304,7 +304,7 @@ control dash_ingress(
         const default_action = deny;
     }
 
-    action set_acl_group_attrs(@Sai[type="sai_ip_addr_family_t", isresourcetype="true"] bit<32> ip_addr_family) {
+    action set_acl_group_attrs(@SaiVal[type="sai_ip_addr_family_t", isresourcetype="true"] bit<32> ip_addr_family) {
         if (ip_addr_family == 0) /* SAI_IP_ADDR_FAMILY_IPV4 */ {
             if (meta.flow.is_ipv6 == 1) {
                 meta.pkt_meta.dropped = true;

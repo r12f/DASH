@@ -9,6 +9,7 @@
 #include "dash_outbound.p4"
 #include "dash_inbound.p4"
 #include "dash_conntrack.p4"
+#include "dash_ha.p4"
 #include "underlay.p4"
 
 control dash_ingress(
@@ -122,7 +123,10 @@ control dash_ingress(
                          ACL_GROUPS_PARAM(inbound_v4),
                          ACL_GROUPS_PARAM(inbound_v6),
                          ACL_GROUPS_PARAM(outbound_v4),
-                         ACL_GROUPS_PARAM(outbound_v6)) {
+                         ACL_GROUPS_PARAM(outbound_v6),
+                         @SalVal[type="sai_object_id_t"] bit<16> ha_set_id,
+                         @SaiVal[type="sai_dash_ha_role_t"] dash_ha_role_t ha_role
+                         ) {
         meta.eni_data.cps             = cps;
         meta.eni_data.pps             = pps;
         meta.eni_data.flows           = flows;
@@ -135,6 +139,8 @@ control dash_ingress(
          * and not a VNET identifier */
         meta.encap_data.vni           = vm_vni;
         meta.vnet_id                  = vnet_id;
+        meta.ha_set_id                = ha_set_id;
+        meta.ha_role                  = ha_role;
 
         if (meta.is_overlay_ip_v6 == 1) {
             if (meta.direction == dash_direction_t.OUTBOUND) {
@@ -422,6 +428,7 @@ control dash_ingress(
         if (meta.eni_data.admin_state == 0) {
             deny();
         }
+        ha.apply(hdr, meta);
         acl_group.apply();
 
 

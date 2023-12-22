@@ -38,11 +38,27 @@ struct eni_data_t {
     IPv4Address pl_underlay_sip;
 }
 
+enum bit<8> dash_ha_role_t {
+    DASH_HA_ROLE_DEAD = 0,
+    DASH_HA_ROLE_ACTIVE = 1,
+    DASH_HA_ROLE_STANDBY = 2,
+    DASH_HA_ROLE_STANDALONE = 3,
+    DASH_HA_ROLE_SWITCHING_TO_ACTIVE = 4
+};
+
 struct metadata_t {
     bool dropped;
     dash_direction_t direction;
     encap_data_t encap_data;
     EthernetAddress eni_addr;
+    bit<16> ha_set_id;
+    dash_ha_role_t ha_role;
+    bit<1> peer_ip_is_v6;
+    IPv4ORv6Address peer_ip;
+    bit<16> dp_channel_dst_port;
+    bit<16> dp_channel_src_port_min;
+    bit<16> dp_channel_src_port_max;
+    bit<32> dp_channel_probe_interval_ms;
     bit<16> vnet_id;
     bit<16> dst_vnet_id;
     bit<16> eni_id;

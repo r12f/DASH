@@ -112,20 +112,20 @@ control dash_ingress(
    meta.stage4_dash_acl_group_id = ## prefix ##_stage4_dash_acl_group_id; \
    meta.stage5_dash_acl_group_id = ## prefix ##_stage5_dash_acl_group_id;
 
-    counter(MAX_ENI, CounterType.both) eni_in;
-    counter(MAX_ENI, CounterType.both) eni_out;
+    counter(MAX_ENI, CounterType.packets_and_bytes) eni_in;
+    counter(MAX_ENI, CounterType.packets_and_bytes) eni_out;
     @SaiCounter[action_names="set_eni_attrs"]
-    counter(MAX_ENI, CounterType.both) eni_in_discards;
+    counter(MAX_ENI, CounterType.packets_and_bytes) eni_in_discards;
     @SaiCounter[action_names="set_eni_attrs"]
-    counter(MAX_ENI, CounterType.both) eni_out_discards;
+    counter(MAX_ENI, CounterType.packets_and_bytes) eni_out_discards;
     @SaiCounter[action_names="set_eni_attrs"]
-    counter(MAX_ENI, CounterType.both) eni_in_error;
+    counter(MAX_ENI, CounterType.packets_and_bytes) eni_in_error;
     @SaiCounter[action_names="set_eni_attrs"]
-    counter(MAX_ENI, CounterType.both) eni_out_error;
+    counter(MAX_ENI, CounterType.packets_and_bytes) eni_out_error;
     @SaiCounter[action_names="set_eni_attrs"]
-    counter(MAX_ENI, CounterType.both) eni_in_oversize;
+    counter(MAX_ENI, CounterType.packets_and_bytes) eni_in_oversize;
     @SaiCounter[action_names="set_eni_attrs"]
-    counter(MAX_ENI, CounterType.both) eni_out_oversize;
+    counter(MAX_ENI, CounterType.packets_and_bytes) eni_out_oversize;
     action set_eni_attrs(bit<32> cps,
                          bit<32> pps,
                          bit<32> flows,

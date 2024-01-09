@@ -589,6 +589,9 @@ class SAICounter(SAIAPITableAttribute):
 
         Whenever a new attribute is introduced, please update the doc here to get it captured: dash-pipeline/bmv2/README.md.
         '''
+        if STRUCTURED_ANNOTATIONS_TAG not in p4rt_counter[PREAMBLE_TAG]:
+            return
+
         for anno in p4rt_counter[PREAMBLE_TAG][STRUCTURED_ANNOTATIONS_TAG]:
             if anno[NAME_TAG] == SAI_COUNTER_TAG:
                 for kv in anno[KV_PAIR_LIST_TAG][KV_PAIRS_TAG]:

@@ -12,6 +12,10 @@
 #include "dash_ha.p4"
 #include "underlay.p4"
 
+#define MAX_ENI (64)
+#define MAX_METER_BUCKETS_PER_ENI (4096)
+#define MAX_METER_BUCKETS (MAX_ENI * MAX_METER_BUCKETS_PER_ENI)
+
 control dash_ingress(
       inout headers_t hdr
     , inout metadata_t meta
@@ -108,6 +112,20 @@ control dash_ingress(
    meta.stage4_dash_acl_group_id = ## prefix ##_stage4_dash_acl_group_id; \
    meta.stage5_dash_acl_group_id = ## prefix ##_stage5_dash_acl_group_id;
 
+    counter(MAX_ENI, CounterType.both) eni_in;
+    counter(MAX_ENI, CounterType.both) eni_out;
+    @SaiCounter[action_names="set_eni_attrs"]
+    counter(MAX_ENI, CounterType.both) eni_in_discards;
+    @SaiCounter[action_names="set_eni_attrs"]
+    counter(MAX_ENI, CounterType.both) eni_out_discards;
+    @SaiCounter[action_names="set_eni_attrs"]
+    counter(MAX_ENI, CounterType.both) eni_in_error;
+    @SaiCounter[action_names="set_eni_attrs"]
+    counter(MAX_ENI, CounterType.both) eni_out_error;
+    @SaiCounter[action_names="set_eni_attrs"]
+    counter(MAX_ENI, CounterType.both) eni_in_oversize;
+    @SaiCounter[action_names="set_eni_attrs"]
+    counter(MAX_ENI, CounterType.both) eni_out_oversize;
     action set_eni_attrs(bit<32> cps,
                          bit<32> pps,
                          bit<32> flows,
@@ -289,8 +307,6 @@ control dash_ingress(
         const default_action = NoAction();
     }
     
-    // MAX_METER_BUCKET = MAX_ENI(64) * NUM_BUCKETS_PER_ENI(4096)
-    #define MAX_METER_BUCKETS 262144
 #ifdef TARGET_BMV2_V1MODEL
     @SaiCounter[name="outbound", action_names="meter_bucket_action", as_attr="true"]
     counter(MAX_METER_BUCKETS, CounterType.bytes) meter_bucket_outbound;

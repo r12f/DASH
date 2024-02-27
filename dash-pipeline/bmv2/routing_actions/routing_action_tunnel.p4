@@ -4,14 +4,11 @@
 action push_action_tunnel(
     in headers_t hdr,
     inout metadata_t meta,
-    in dash_encapsulation_t encap = dash_encapsulation_t.VXLAN,
-    in bit<24> vni = 0,
-    in IPv4Address underlay_sip = 0,
-    in IPv4Address underlay_dip = 0,
-    in EthernetAddress underlay_smac = 0,
-    in EthernetAddress underlay_dmac = 0,
-    in EthernetAddress overlay_dmac = 0)
+    in bit<16> u0_tunnel_id = 0,
+    in bit<16> u1_tunnel_id = 0)
 {
+    REQUIRES(u0_tunnel_id != 0 || u1_tunnel_id != 0);
+    
     meta.routing_actions = meta.routing_actions | dash_routing_actions_t.TUNNEL;
 
     meta.encap_data.dash_encapsulation = encap;

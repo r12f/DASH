@@ -7,7 +7,8 @@ enum bit<32> dash_routing_actions_t {
     NONE = 0,
     STATIC_ENCAP = (1 << 0),
     NAT46 = (1 << 1),
-    NAT64 = (1 << 2)
+    NAT64 = (1 << 2),
+    TUNNEL = (1 << 3)
 }
 
 enum bit<16> dash_direction_t {

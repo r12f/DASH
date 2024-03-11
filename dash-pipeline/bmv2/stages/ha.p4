@@ -1,6 +1,8 @@
 #ifndef _DASH_STAGE_HA_P4_
 #define _DASH_STAGE_HA_P4_
 
+#include "../ha/ha.p4"
+
 control ha_stage(inout headers_t hdr,
                  inout metadata_t meta)
 {
@@ -126,7 +128,14 @@ control ha_stage(inout headers_t hdr,
         }
         ha_set.apply();
     
-        // TODO: HA state machine handling.
+        // HA state machine handling.
+        switch (meta.ha.ha_role) {
+            dash_ha_role_t.DEAD: { ha_dead_role_handle_packet.apply(meta); }
+            dash_ha_role_t.ACTIVE: { ha_active_role_handle_packet.apply(meta); }
+            dash_ha_role_t.STANDBY: { ha_standby_role_handle_packet.apply(meta); }
+            dash_ha_role_t.STANDALONE: { ha_standalone_role_handle_packet.apply(meta); }
+            dash_ha_role_t.SWITCHING_TO_ACTIVE: { ha_switching_to_active_role_handle_packet.apply(meta); }
+        }
     }
 }
 

@@ -1074,6 +1074,28 @@ class DASHSAIExtensions(SAIObject):
         for sai_api in self.sai_apis:
             sai_api.post_parsing_process(all_table_names)
 
+        self.sai_apis.append(self.create_packet_hit_test_api())
+        
+    def create_packet_hit_test_api(self) -> DASHAPISet:
+        api = DASHAPISet('dash_packet_hit_test')
+
+        table = SAIAPITableData()
+        table.name = 'dash_packet_hit_test'
+        table.api_name = "dash_packet_hit_test"
+
+        # Add flow keys as packet hit test key.
+        table.keys: List[SAIAPITableKey] = []
+
+        # Add a mock action as packet hit test action.
+        table.actions: List[SAIAPITableAction] = []
+
+        # Add all table keys as packet hit test result attributes.
+        # Add flow attributes as packet hit test attributes.
+        table.action_params: List[SAIAPITableActionParam] = []
+
+        table.post_parsing_process(all_table_names)
+        table.sai_attributes: List[SAIAPITableAttribute] = []
+
 
 #
 # SAI Generators:

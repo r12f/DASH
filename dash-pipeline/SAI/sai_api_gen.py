@@ -1094,7 +1094,6 @@ class DASHSAIExtensions(SAIObject):
         table.action_params: List[SAIAPITableActionParam] = []
 
         table.post_parsing_process(all_table_names)
-        table.sai_attributes: List[SAIAPITableAttribute] = []
 
 
 #

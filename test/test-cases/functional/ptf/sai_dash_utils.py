@@ -195,15 +195,15 @@ class VnetAPI(VnetObjects):
     def eni_remove(self, eni_id):
         sai_thrift_remove_eni(self.client, eni_id)
 
-    def direction_lookup_create(self, vni):
+    def direction_lookup_create(self, vni,
+                                action = SAI_DIRECTION_LOOKUP_ENTRY_ACTION_SET_OUTBOUND_DIRECTION,
+                                eni_mac_override_type = SAI_DASH_ENI_MAC_OVERRIDE_TYPE_NONE):
         """
         Create direction lookup entry
         """
 
-        act = SAI_DIRECTION_LOOKUP_ENTRY_ACTION_SET_OUTBOUND_DIRECTION
-
         direction_lookup_entry = sai_thrift_direction_lookup_entry_t(switch_id=self.switch_id, vni=vni)
-        sai_thrift_create_direction_lookup_entry(self.client, direction_lookup_entry, action=act)
+        sai_thrift_create_direction_lookup_entry(self.client, direction_lookup_entry, action=action, dash_eni_mac_override_type=eni_mac_override_type)
         self.assertEqual(self.status(), SAI_STATUS_SUCCESS)
         self.add_teardown_obj(self.direction_lookup_remove, direction_lookup_entry)
         return direction_lookup_entry

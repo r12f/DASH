@@ -1,6 +1,6 @@
 [submodule "dash-pipeline/SAI/SAI"]
 	path = dash-pipeline/SAI/SAI
-	url = https://github.com/opencomputeproject/SAI.git
+	url = https://github.com/jimmyzhai/SAI.git
 	branch = master
 [submodule "test/SAI-Challenger"]
 	path = test/SAI-Challenger

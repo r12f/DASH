@@ -187,9 +187,9 @@ control dash_ingress(
 
     action tunnel_decap_pa_validate(inout headers_t hdr,
                                     inout metadata_t meta,
-                                    @SaiVal[type="sai_object_id_t"] bit<16> src_vnet_id,
                                     bit<32> meter_class_or,
-                                    @SaiVal[default_value="4294967295"] bit<32> meter_class_and) {
+                                    @SaiVal[default_value="4294967295"] bit<32> meter_class_and,
+                                    @SaiVal[type="sai_object_id_t"] bit<16> src_vnet_id) {
         meta.vnet_id = src_vnet_id;
         set_meter_attrs(meta, meter_class_or, meter_class_and);
     }

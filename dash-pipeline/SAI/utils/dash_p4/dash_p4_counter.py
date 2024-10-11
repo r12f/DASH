@@ -19,6 +19,7 @@ class DashP4Counter(DashP4TableAttribute):
         self.counter_type: str = "bytes"
         self.attr_type: str = "stats"
         self.no_suffix: bool = ""
+        self.sai_binding: Optional[str] = ""
         self.param_actions: List[str] = []
 
     def parse_p4rt(
@@ -110,6 +111,8 @@ class DashP4Counter(DashP4TableAttribute):
                             )
                     elif kv["key"] == "no_suffix":
                         self.no_suffix = str(kv["value"]["stringValue"]) == "true"
+                    elif kv["key"] == "sai_binding":
+                        self.sai_binding = kv["value"]["stringValue"]
                     else:
                         raise ValueError("Unknown attr annotation " + kv["key"])
 

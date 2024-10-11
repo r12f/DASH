@@ -265,6 +265,8 @@ control dash_ingress(
 #endif  // DPDK_PNA_SEND_TO_PORT_FIX_MERGED
 #endif // TARGET_DPDK_PNA
 
+        UPDATE_COUNTER(port_rx, 0);
+
         if (meta.is_fast_path_icmp_flow_redirection_packet) {
             UPDATE_COUNTER(port_lb_fast_path_icmp_in, 0);
         }
@@ -386,8 +388,10 @@ control dash_ingress(
         metering_update_stage.apply(hdr, meta);
 
         if (meta.dropped) {
+            UPDATE_COUNTER(port_rx_discards, 0);
             drop_action();
         } else {
+            UPDATE_COUNTER(port_tx, 0);
             UPDATE_ENI_COUNTER(eni_tx);
 
             if (meta.direction == dash_direction_t.OUTBOUND) {

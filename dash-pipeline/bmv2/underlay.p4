@@ -41,6 +41,7 @@ control underlay(
     action pkt_act(bit<9> packet_action, bit<9> next_hop_id) {
         if(packet_action == SAI_PACKET_ACTION_DROP) {
             /* Drops the packet */
+            UPDATE_COUNTER(port_tx_discards, 0);
             meta.dropped = true;
         } else if (packet_action == SAI_PACKET_ACTION_FORWARD) {
             /* Forwards the packet on different/same port it arrived based on routing */

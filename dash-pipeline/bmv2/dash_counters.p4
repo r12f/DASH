@@ -13,10 +13,19 @@
 //
 // Port level counters
 //
-DEFINE_PACKET_COUNTER(vip_miss_drop, 1, attr_type="stats")
-DEFINE_PACKET_COUNTER(eni_miss_drop, 1, attr_type="stats")
-DEFINE_COUNTER(port_lb_fast_path_icmp_in, 1, attr_type="stats")
-DEFINE_COUNTER(port_lb_fast_path_eni_miss_drop, 1, attr_type="stats")
+DEFINE_PACKET_COUNTER(port_rx, 1, attr_type="stats", sai_binding="SAI_PORT_STAT_IF_IN_UCAST_PKTS")                  // Total packet received.
+DEFINE_PACKET_COUNTER(port_rx_errors, 1, attr_type="stats", sai_binding="SAI_PORT_STAT_IF_IN_ERRORS")               // Bad packets.
+DEFINE_PACKET_COUNTER(port_rx_discards, 1, attr_type="stats", sai_binding="SAI_PORT_STAT_IF_IN_DISCARDS")           // Packet is good, but dropped by pipeline.
+DEFINE_PACKET_COUNTER(port_unknown_protos, 1, attr_type="stats", sai_binding="SAI_PORT_STAT_IF_IN_UNKNOWN_PROTOS")  // Protocol is not supported.
+
+DEFINE_PACKET_COUNTER(port_tx, 1, attr_type="stats", sai_binding="SAI_PORT_STAT_IF_OUT_UCAST_PKTS")                 // Total packet transmitted.
+DEFINE_PACKET_COUNTER(port_tx_errors, 1, attr_type="stats", sai_binding="SAI_PORT_STAT_IF_OUT_ERRORS")              // Bad packets.
+DEFINE_PACKET_COUNTER(port_tx_discards, 1, attr_type="stats", sai_binding="SAI_PORT_STAT_IF_OUT_DISCARDS")          // Packet is good, but dropped by pipeline.
+
+DEFINE_PACKET_COUNTER(vip_miss_drop, 1, attr_type="stats")              // Drop due to VIP miss.
+DEFINE_PACKET_COUNTER(eni_miss_drop, 1, attr_type="stats")              // Drop due to ENI miss.
+DEFINE_COUNTER(port_lb_fast_path_icmp_in, 1, attr_type="stats")         // ICMP packets that are processed by LB fast path.
+DEFINE_COUNTER(port_lb_fast_path_eni_miss_drop, 1, attr_type="stats")   // Drop due to ENI miss in LB fast path.
 
 //
 // ENI level counters:

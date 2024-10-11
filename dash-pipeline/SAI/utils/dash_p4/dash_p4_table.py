@@ -368,7 +368,8 @@ class DashP4Table(DashP4Object):
     def create_sai_stats(self, sai_api: SaiApi) -> None:
         sai_api.stats = []
         for sai_stat in self.sai_stats:
-            sai_api.stats.extend(sai_stat.to_sai_attribute(self.name))
+            if sai_stat.sai_binding != None:
+                sai_api.stats.extend(sai_stat.to_sai_attribute(self.name))
 
     def create_sai_attributes(self, sai_api: SaiApi) -> None:
         # If the table is an object with more one key (table entry id), we need to add all the keys into the attributes.
